@@ -3,5 +3,8 @@ from .shared.auth.views import LoginView
 
 # Will be adding all api based urlpatterns here
 urlpatterns = [
-    path('login/', LoginView.as_view(), name='token_obtain_pair')
+    path('login/', LoginView.as_view(), name='token_obtain_pair'),
+
+    # Admin API URLs goes here
+    path('admin/', include('nativo_english.api.admin.urls')),
 ]

@@ -26,8 +26,7 @@ def api_exception_handler(exc, context):
         response.data = {
             "status": "error",
             "message": response.data.get('detail', 'An error occurred')[0], # type: ignore
-            "data": None, 
-            "status": status.HTTP_400_BAD_REQUEST
+            "data": None,
         }
 
     return response

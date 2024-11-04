@@ -33,7 +33,6 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -43,11 +42,15 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    'drf_yasg',
+    # 'drf_yasg',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
     
     # Project Based apps
     'nativo_english.api',
     'nativo_english.api.admin',
+
+    'nativo_english.api.shared',
     'nativo_english.api.shared.auth',
     'nativo_english.api.shared.user',
 ]
@@ -56,7 +59,36 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'EXCEPTION_HANDLER': 'api.shared.utils.api_exception_handler',
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'EXCEPTION_HANDLER': 'nativo_english.api.shared.utils.api_exception_handler',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'NATIVO ENGLISH APIs',
+    'DESCRIPTION': 'APIs to access NATIVO ENGLISH PLATFORM',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_DIST': 'SIDECAR',  # shorthand to use the sidecar instead
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
+
+    'SWAGGER_UI_SETTINGS': {
+        'persistAuthorization': True,  # Keeps authorization data between refreshes
+    },
+    'SECURITY': [{'BearerAuth': []}],  # Adds BearerAuth as a security scheme
+    'COMPONENTS': {
+        'securitySchemes': {
+            'BearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',  # Optional, indicates JWT for Bearer tokens
+            },
+        },
+    },
 }
 
 SIMPLE_JWT = {

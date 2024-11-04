@@ -37,23 +37,35 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 # Token Serializer
 class LoginSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        # Generate the initial token
+        token = super().get_token(user)
+        
+        # Add custom claims to the access token only
+        token['role'] = user.role  # Assuming `role` is a field on your User model
+        token['email'] = user.email
+        token['username'] = user.username
+        
+        return token
+    
     def validate(self, attrs):
         try:
             data = super().validate(attrs)
             
             # Get both refresh and access tokens
-            refresh = self.get_token(self.user)
-            access = refresh.access_token
+            data['refresh'] = str(self.get_token(self.user))
+            data['access'] = str(self.get_token(self.user).access_token)
 
-            # Custom payload with user information
-            data['refresh'] = str(refresh)
-            data['access'] = str(access)
-            data['user'] = {
-                'id': self.user.id,
-                'username': self.user.username,
-                'email': self.user.email,
-                'role': self.user.role  # Assuming `role` is a field on your User model
-            }
+            # # Custom payload with user information
+            # data['refresh'] = str(refresh)
+            # data['access'] = str(access)
+            # data['user'] = {
+            #     'id': self.user.id,
+            #     'username': self.user.username,
+            #     'email': self.user.email,
+            #     'role': self.user.role  # Assuming `role` is a field on your User model
+            # }
             
             return data
         
