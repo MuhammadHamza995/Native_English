@@ -1,6 +1,8 @@
 from django.urls import path, include
-from .views import AdminUserCreateView
+from .views import AdminUserListCreateView, AdminUserRetrieveUpdateView
 
 urlpatterns = [
-    path('user', AdminUserCreateView.as_view(), name='Create-USER-By-ADMIN'),
+    path('users/', AdminUserListCreateView.as_view(), name='user-create-list'),
+    path('users/<int:id>/', AdminUserRetrieveUpdateView.as_view(), name='user-detail'),
+
 ]

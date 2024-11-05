@@ -3,7 +3,7 @@ from nativo_english.api.shared.user.models import User
 from django.contrib.auth.hashers import make_password
 
 # Admin User Serializer
-class AdminUserCreateSerializer(serializers.ModelSerializer):
+class AdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'password', 'role', 'first_name', 'last_name']

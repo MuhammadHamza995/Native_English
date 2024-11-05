@@ -59,10 +59,10 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'DEFAULT_PERMISSION_CLASSES': [
+    'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    ],
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    ),
+    
     'EXCEPTION_HANDLER': 'nativo_english.api.shared.utils.api_exception_handler',
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
@@ -78,23 +78,24 @@ SPECTACULAR_SETTINGS = {
 
     'SWAGGER_UI_SETTINGS': {
         'persistAuthorization': True,  # Keeps authorization data between refreshes
+        'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SuffixOperationIdSchema'
     },
-    'SECURITY': [{'BearerAuth': []}],  # Adds BearerAuth as a security scheme
-    'COMPONENTS': {
-        'securitySchemes': {
-            'BearerAuth': {
-                'type': 'http',
-                'scheme': 'bearer',
-                'bearerFormat': 'JWT',  # Optional, indicates JWT for Bearer tokens
-            },
-        },
+    'SECURITY': [{'BearerAuth': []}],  # Reference the security scheme here
+    'COMPONENT_SPLIT_REQUEST': True,   # Helpful if you want to split request schemas
+    'SECURITY_DEFINITIONS': {
+        'BearerAuth': {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+            'description': 'JWT Authorization header using the Bearer scheme. Example: "Bearer <your JWT token>"'
+        }
     },
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_TYPES': ('Bearer',), 
     'ALGORITHM': 'HS256',  # Use HMAC SHA-256 algorithm
     'SIGNING_KEY': os.getenv('JWT_SECRET_KEY', 'your-secret-key'), 
 }
@@ -179,3 +180,27 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        # 'django': {
+        #     'handlers': ['console'],
+        #     'level': 'DEBUG',
+        # },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+        'rest_framework': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
