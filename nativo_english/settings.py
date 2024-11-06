@@ -20,7 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Initialize django-environ
 env = environ.Env(
-    DEBUG=(bool, False)  # default to False in production
+    DEBUG=(bool, False),  # default to False in production
+    # SECRET_KEY=(str, 'testestesfdsjfdasjfhadsjkfh'),
+    # ALLOWED_HOSTS=(str, ['*']),
+    # DATABASE_URL=(str, 'postgres://nativo_english:pgdev@127.0.0.1:5432/nativo_english')
 )
 
 # Read the .env file (for local/development)

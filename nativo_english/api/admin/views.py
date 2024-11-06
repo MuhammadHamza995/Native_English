@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiRequest, OpenApiResponse
 from drf_spectacular.types import OpenApiTypes
 from .serializer import AdminUserSerializer
 from nativo_english.api.shared.user.models import User
@@ -12,13 +12,21 @@ from .permissions import IsAdminUserRole
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from nativo_english.api.shared.utils import api_response, api_exception_handler
+import json
 
+# -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
     page_size = 10  # Default number of items per page
     page_size_query_param = 'page_size'  # Allow client to set page size
     max_page_size = 100  # Maximum limit of items per page
+# -----------------------------------------
 
 
+# -----------------------------------------
+# This view corresponds to following endpoints
+# 1. Get all Users (can only be access by Admin user rol --> GET /api/admin/users/)
+# 2. Create New User user request data (can only be access by Admin user rol --> POST /api/admin/users/{id})
+# -----------------------------------------
 class AdminUserListCreateView(APIView):
     serializer_class = AdminUserSerializer
     permission_classes = [
@@ -29,41 +37,95 @@ class AdminUserListCreateView(APIView):
 
     @extend_schema(
         tags=['Admin'],
-        summary="(Admin-only) List Users",
-        description="Lists all users",
+        summary="Get All users (Can be accessed by user with admin role only)",
+        description="Lists all users (if filter is applied for role/suspend)",
+        parameters= [
+            # Query parameters (optional)
+            OpenApiParameter(
+                name="role",
+                location=OpenApiParameter.QUERY,
+                description="Role of the user to filter by (optional)",
+                required=False,
+                type=OpenApiTypes.STR
+            ),
+            OpenApiParameter(
+                name="is_active",
+                location=OpenApiParameter.QUERY,
+                description="Filter by active status, true or false (optional)",
+                required=False,
+                type=OpenApiTypes.BOOL
+            ),
+            OpenApiParameter(
+                name="page",
+                location=OpenApiParameter.QUERY,
+                description="get other pages data, pass the page number",
+                required=False,
+                type=OpenApiTypes.INT
+            ),
+        ]
     )
     def get(self, request, *args, **kwargs):
         try:
-            queryset = User.objects.only("id", "username", "email", "first_name", "last_name")
+            # Get query parameters for filtering
+            role = request.query_params.get('role')
+            is_active = request.query_params.get('is_active')
+
+            # Get all users first
+            queryset = User.objects.only("id", "username", "email", "first_name", "last_name", "is_active")
+            
+            if role:
+                queryset = queryset.filter(role=role)
+
+            if is_active is not None:
+                is_active = is_active.lower() == 'true'
+                queryset = queryset.filter(is_active = is_active)
+
+            
             paginator = self.pagination_class()
             page = paginator.paginate_queryset(queryset, request)
 
+            serializer = self.serializer_class(page, many=True)
+            
             if page is not None:
-                serializer = self.serializer_class(page, many=True)
-                return paginator.get_paginated_response(serializer.data)
+                # using custom response helper to structure the response
+                response_data = {
+                    "count": paginator.page.paginator.count,
+                    "num_pages": paginator.page.paginator.num_pages,
+                    "current_page": paginator.page.number,
+                    "results": serializer.data,
+                }
+                return api_response(status.HTTP_200_OK, 'Users List Retrieved Successfully', response_data)
 
             serializer = self.serializer_class(queryset, many=True)
-            response_data =  paginator.get_paginated_response(serializer.data)
-
-            return api_response(status.HTTP_200_OK, 'Users List Retrieved Successfully', response_data)
+            
+            return api_response(status.HTTP_200_OK, 'Users List Retrieved Successfully', serializer.data)
 
         except Exception as ex:
             raise ex
 
     @extend_schema(
         tags=['Admin'],
-        summary="(Admin-only) Create a new user",
-        description="Creates a new user.",
+        summary="Creates a new User (Can be accessed by user with admin role only)",
+        description="Creates a new user by Admin User.",
     )
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            return Response({"message": "Admin user created successfully"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                user = serializer.save()
+                return api_response(status.HTTP_201_CREATED, 'User created successfully', user)
+            
+            return api_response(status.HTTP_400_BAD_REQUEST, 'BAD Request')
+        except Exception as ex:
+            raise ex
+# -----------------------------------------
 
 
-
+# -----------------------------------------
+# This view corresponds to following endpoints
+# 1. Retreive User by ID (can only be access by Admin user rol --> GET /api/admin/users/{id})
+# 2. Update User by ID (can only be access by Admin user rol --> PUT /api/admin/users/{id})
+# -----------------------------------------
 class AdminUserRetrieveUpdateView(APIView):
     serializer_class = AdminUserSerializer
     permission_classes = [IsAuthenticated, IsAdminUserRole]
@@ -72,30 +134,83 @@ class AdminUserRetrieveUpdateView(APIView):
 
     @extend_schema(
         tags=['Admin'],
-        summary="(Admin-only) List Users or Retrieve User by ID",
-        description="Lists all users if no ID is provided; retrieves a specific user by ID if provided.",
+        summary="Retrieve User by ID (Can be accessed by user with admin role only)",
+        description="Retrieves a specific user by ID if provided.",
         parameters=[
             OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID")
         ],
     )
     def get(self, request, id, *args, **kwargs):
-        # Check if Authorization header contains a Bearer token
-        auth_header = request.headers.get("Authorization", "")
-        print(auth_header)
-        return Response({"message": "User created"})
+        try:
+        # Check if Id is present:
+            if id is not None:
+                # Retrieve user by ID from the URL
+                user = get_object_or_404(User, id=id)
+
+                # Serialize the user data
+                serializer = AdminUserSerializer(user)
+
+                response_data = serializer.data
+
+                return api_response(status.HTTP_200_OK, 'User retrieved Successfully', response_data)
+                
+        except Exception as ex:
+            raise ex
+
     
     @extend_schema(
         tags=['Admin'],
-        summary="(Admin-only) Update User by ID",
-        description="Updates the user by ID.",
+        summary="Update User by ID (Can be accessed by user with admin role only)",
+        description="Updates the user by specific Id.",
         parameters=[
             OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID")
         ],
     )
     def put(self, request, id=None, *args, **kwargs):
-        user = get_object_or_404(User, id=id)
-        serializer = self.serializer_class(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "User updated successfully"}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = get_object_or_404(User, id=id)
+            serializer = self.serializer_class(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return api_response(status.HTTP_200_OK,"User updated successfully")
+            return api_response(status.HTTP_400_BAD_REQUEST, serializer.errors)
+        
+        except Exception as ex:
+            raise ex
+# -----------------------------------------
+
+
+# -----------------------------------------
+# This view corresponds to following endpoints
+# 1. Update User Role by ID (can only be access by Admin user rol --> PUT /api/admin/users/{id}/role)
+# -----------------------------------------
+class AdminUserRoleUpdateView(APIView):
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsAuthenticated, IsAdminUserRole]
+    pagination_class = PageNumberPagination
+
+    @extend_schema(
+        tags=['Admin'],
+        summary="Update User Role (Can be accessed by user with admin role only)",
+        description="Updates the role of the user by ID.",
+        parameters=[
+            OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID"),
+        ],
+        request=OpenApiResponse(
+            response=AdminUserSerializer,
+            description="User creation request",
+            examples=[{'username': 'john_doe', 'email': 'john@example.com'}],
+        ),
+    )
+    def put(self, request, id, *arg, **kwargs):
+        try:
+            user = get_object_or_404(User, id=id)
+            updated_role = request.data.get('role')
+
+            if updated_role:
+                user.role = updated_role
+                user.save()
+
+                return api_response(status.HTTP_200_OK, '''User role updated successfully for {id}''', user)
+        except Exception as ex:
+            raise ex

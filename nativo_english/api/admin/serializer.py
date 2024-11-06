@@ -6,7 +6,7 @@ from django.contrib.auth.hashers import make_password
 class AdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'password', 'role', 'first_name', 'last_name']
+        fields = ['username', 'password', 'role', 'first_name', 'last_name', 'is_active']
         extra_kwargs = {
             'password': {'write_only': True},  # Optional: hide password from output
         }
