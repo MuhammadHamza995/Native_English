@@ -113,8 +113,8 @@ class AdminUserListCreateView(APIView):
             serializer = self.serializer_class(data=request.data)
             if serializer.is_valid():
                 user = serializer.save()
-                return api_response(status.HTTP_201_CREATED, 'User created successfully', user)
-            
+                response_serializer = self.serializer_class(user)
+                return api_response(status.HTTP_201_CREATED, 'User created successfully', response_serializer.data)
             return api_response(status.HTTP_400_BAD_REQUEST, 'BAD Request')
         except Exception as ex:
             raise ex
@@ -210,7 +210,82 @@ class AdminUserRoleUpdateView(APIView):
             if updated_role:
                 user.role = updated_role
                 user.save()
+                response_serializer = self.serializer_class(user)
 
-                return api_response(status.HTTP_200_OK, '''User role updated successfully for {id}''', user)
+                return api_response(status.HTTP_200_OK, f'''User role updated successfully for {id}''', response_serializer.data)
+            else:
+                return api_response(status.HTTP_400_BAD_REQUEST, f'''No User Role Provided''')
         except Exception as ex:
             raise ex
+
+# -----------------------------------------
+# This view corresponds to following endpoint
+# 1. Update user isActive status to true(can only be access by Admin user rol --> PUT /api/admin/users/{id}/activate/)
+# -----------------------------------------
+class AdminUserActivateSuspendUpdateView(APIView):
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsAuthenticated, IsAdminUserRole]
+
+    @extend_schema(
+        tags=['Admin'],
+        summary="Update User Status (Can be accessed by user with admin role only)",
+        description="Updates the isActive variable of the user to true.",
+        parameters=[
+            OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID"),
+        ],
+        request=OpenApiResponse(
+            response=AdminUserSerializer,
+            description="User creation request",
+            examples=[{'username': 'john_doe', 'email': 'john@example.com'}],
+        ),
+    )
+    def post(self, request, id = None, action = None, *arg, **kwargs):
+        try:
+            user = get_object_or_404(User, id=id)
+            if action == "activate":
+                user.is_active = True
+                user.save()
+                response_serializer = self.serializer_class(user)
+                return api_response(status.HTTP_200_OK, f'''User activated successfully for {id}''', response_serializer.data)
+            elif action == "suspend":
+                user.is_active = False
+                user.save()
+                response_serializer = self.serializer_class(user)
+                return api_response(status.HTTP_200_OK, f'''User suspended successfully for {id}''', response_serializer.data)
+
+        except Exception as ex:
+            raise ex
+        
+
+# -----------------------------------------
+# This view corresponds to following endpoint
+# 1. Update user isActive status to false(can only be access by Admin user rol --> PUT /api/admin/users/{id}/suspend/)
+# -----------------------------------------
+# class AdminUserSuspendUpdateView(APIView):
+#     serializer_class = AdminUserSerializer
+#     permission_classes = [IsAuthenticated, IsAdminUserRole]
+
+#     @extend_schema(
+#         tags=['Admin'],
+#         summary="Update User Role (Can be accessed by user with admin role only)",
+#         description="Updates the role of the user by ID.",
+#         parameters=[
+#             OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID"),
+#         ],
+#         request=OpenApiResponse(
+#             response=AdminUserSerializer,
+#             description="User creation request",
+#             examples=[{'username': 'john_doe', 'email': 'john@example.com'}],
+#         ),
+#     )
+#     def put(self, request, id, *arg, **kwargs):
+#         try:
+#             user = get_object_or_404(User, id=id)
+
+#             if user.is_active:
+#                 user.is_active = False
+#                 response_serializer = self.serializer_class(user)
+
+#                 return api_response(status.HTTP_200_OK, '''User status updated successfully for {id}''', response_serializer.data)
+#         except Exception as ex:
+#             raise ex
