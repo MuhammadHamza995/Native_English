@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'nativo_english.api.shared',
     'nativo_english.api.shared.auth',
     'nativo_english.api.shared.user',
+    'nativo_english.api.shared.course',
 ]
 
 REST_FRAMEWORK = {
