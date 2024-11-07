@@ -6,18 +6,15 @@ from django.contrib.auth.hashers import make_password
 class AdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'password', 'role', 'first_name', 'last_name', 'is_active']
+        fields = ['id', 'username', 'password', 'role', 'first_name', 'last_name', 'is_active']
         extra_kwargs = {
             'password': {'write_only': True},  # Optional: hide password from output
         }
 
     def create(self, validated_data):
-        # Set the password using the built-in method for hashing
-        validated_data['password'] = make_password(validated_data['password'])
-        user = User(**validated_data)
-        # return super().create(validated_data)
-        return user.save()
-    
-
-
+        if validated_data['password']:
+            validated_data['password'] = make_password(validated_data['password'])
         
+        user = User.objects.create(**validated_data)  # Save and create user
+
+        return user
