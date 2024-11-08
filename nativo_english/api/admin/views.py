@@ -7,11 +7,13 @@ from rest_framework.pagination import PageNumberPagination
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiRequest, OpenApiResponse
 from drf_spectacular.types import OpenApiTypes
 from .serializer import AdminUserSerializer
+from nativo_english.api.shared.course.serializer import CourseSerializer
 from nativo_english.api.shared.user.models import User
 from .permissions import IsAdminUserRole
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from nativo_english.api.shared.utils import api_response, api_exception_handler
+from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id
 import json
 
 # -----------------------------------------
@@ -256,6 +258,144 @@ class AdminUserActivateSuspendUpdateView(APIView):
         except Exception as ex:
             raise ex
         
+# -----------------------------------------
+# This view corresponds to following endpoints
+# 1. Get all Courses (can only be access by Admin user rol --> GET /api/admin/course/)
+# 2. Create New Course user request data (can only be access by Admin user rol --> POST /api/admin/course)
+# -----------------------------------------
+class AdminCourseListCreateView(APIView):
+    serializer_class = CourseSerializer
+    permission_classes = [
+        IsAuthenticated, 
+        IsAdminUserRole
+    ]
+    pagination_class = AdminUserPagination
+
+    @extend_schema(
+        tags=['Admin Course'],
+        summary="Get All Courses (Admin access only)",
+        description="Lists all courses with optional filters by title and is_paid.",
+        parameters= [
+            # Query parameters (optional)
+            OpenApiParameter(
+                name="title",
+                location=OpenApiParameter.QUERY,
+                description="Name of the course to filter by (optional)",
+                required=False,
+                type=OpenApiTypes.STR
+            ),
+            OpenApiParameter(
+                name="is_paid",
+                location=OpenApiParameter.QUERY,
+                description="Filter by paid status, true or false (optional)",
+                required=False,
+                type=OpenApiTypes.BOOL
+            ),
+            OpenApiParameter(
+                name="page",
+                location=OpenApiParameter.QUERY,
+                description="get other pages data, pass the page number",
+                required=False,
+                type=OpenApiTypes.INT
+            ),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        try:
+            # Get query parameters for filtering
+            title = request.query_params.get('title')
+            is_paid = request.query_params.get('is_paid')
+
+            queryset = get_all_courses(filter_title=title, filter_is_paid=is_paid)
+
+            
+            # if title:
+            #     queryset = queryset.filter(title=title)
+
+            # if is_paid is not None:
+                # is_paid = is_paid.lower() == 'true'
+                # queryset = queryset.filter(is_paid = is_paid)
+
+            
+            paginator = self.pagination_class()
+            page = paginator.paginate_queryset(queryset, request)
+
+            serializer = self.serializer_class(page, many=True)
+            
+            if not queryset:
+                return api_response(status.HTTP_404_NOT_FOUND, 'Course Not Found', serializer.data)
+            
+            if page is not None:
+                # using custom response helper to structure the response
+                response_data = {
+                    "count": paginator.page.paginator.count,
+                    "num_pages": paginator.page.paginator.num_pages,
+                    "current_page": paginator.page.number,
+                    "results": serializer.data,
+                }
+                return api_response(status.HTTP_200_OK, 'Course List Retrieved Successfully', response_data)
+
+            serializer = self.serializer_class(queryset, many=True)
+            
+            return api_response(status.HTTP_200_OK, 'Course List Retrieved Successfully', serializer.data)
+
+        except Exception as ex:
+            raise ex
+
+    @extend_schema(
+        tags=['Admin Course'],
+        summary="Creates a new course (Can be accessed by user with admin role only)",
+        description="Creates a new course by Admin User.",
+    )
+
+    def post(self, request, *args, **kwargs):
+        result = create_course(request.data)
+
+        if "error" in result or "non_field_errors" in result:
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({'message': 'Course created successfully', 'data': result}, status=status.HTTP_201_CREATED)
+# -----------------------------------------
+
+# -----------------------------------------
+# This view corresponds to following endpoints
+# 1. Retreive Course by ID (can only be access by Admin user rol --> GET /api/admin/course/{id})
+# 2. Update Course by ID (can only be access by Admin user rol --> PUT /api/admin/course/{id})
+# -----------------------------------------
+class AdminCourseRetrieveUpdateView(APIView):
+    serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated, IsAdminUserRole]
+    pagination_class = PageNumberPagination
+
+    @extend_schema(
+        tags=['Admin Course'],
+        summary="Retrieve Course by ID (Admin access only)",
+        parameters=[
+            OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="Course ID")
+        ]
+    )
+    def get(self, request, id, *args, **kwargs):
+        course_data = get_course_by_id(id)
+        return api_response(status.HTTP_200_OK, 'Course retrieved successfully', course_data)
+
+    @extend_schema(
+        tags=['Admin Course'],
+        summary="Update course by ID (Can be accessed by user with admin role only)",
+        description="Updates the course by specific Id.",
+        parameters=[
+            OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="Course ID")
+        ],
+    )
+
+    def put(self, request, id=None, *args, **kwargs):
+        result = update_course(id, request.data)
+
+        if "error" in result or "non_field_errors" in result:
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({'message': 'Course updated successfully', 'data': result}, status=status.HTTP_200_OK)
+# -----------------------------------------
+
 
 # -----------------------------------------
 # This view corresponds to following endpoint

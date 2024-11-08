@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import AdminUserListCreateView, AdminUserRetrieveUpdateView, AdminUserRoleUpdateView, AdminUserActivateSuspendUpdateView
+from .views import AdminUserListCreateView, AdminUserRetrieveUpdateView, AdminUserRoleUpdateView, AdminUserActivateSuspendUpdateView, AdminCourseListCreateView, AdminCourseRetrieveUpdateView
 
 urlpatterns = [
     path('users/', AdminUserListCreateView.as_view(), name='user-create-list'),
@@ -9,4 +9,6 @@ urlpatterns = [
     path('users/<int:id>/activate/', AdminUserActivateSuspendUpdateView.as_view(), {'action' : 'activate'}, name='activate-user'),
     path('users/<int:id>/suspend/', AdminUserActivateSuspendUpdateView.as_view(), {'action' : 'suspend'} ,name='suspend-user'),
 
+    path('course/', AdminCourseListCreateView.as_view(), name='course-create-list'),
+    path('course/<int:id>/', AdminCourseRetrieveUpdateView.as_view(), name='course-detail'),
 ]
