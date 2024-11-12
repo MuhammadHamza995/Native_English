@@ -1,6 +1,7 @@
 from rest_framework import permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from nativo_english.api.shared import messages
 
 class IsAdminUserRole(permissions.BasePermission):
     """
@@ -28,4 +29,5 @@ class IsAdminUserRole(permissions.BasePermission):
             return True
         
         # Raise a permission denied exception with a custom message
-        raise PermissionDenied(detail="You do not have permission to perform this action.")
+        raise PermissionDenied(detail=messages.PERMISSION_DENIED_MESSAGE)
+    

@@ -1,5 +1,5 @@
 # api/admin/views.py
-
+from nativo_english.api.shared import messages
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -96,11 +96,11 @@ class AdminUserListCreateView(APIView):
                     "current_page": paginator.page.number,
                     "results": serializer.data,
                 }
-                return api_response(status.HTTP_200_OK, 'Users List Retrieved Successfully', response_data)
+                return api_response(status.HTTP_200_OK, messages.USERS_LIST_RETRIEVED_SUCCESS_MESSAGE, response_data)
 
             serializer = self.serializer_class(queryset, many=True)
             
-            return api_response(status.HTTP_200_OK, 'Users List Retrieved Successfully', serializer.data)
+            return api_response(status.HTTP_200_OK, messages.USERS_LIST_RETRIEVED_SUCCESS_MESSAGE, serializer.data)
 
         except Exception as ex:
             raise ex
@@ -115,9 +115,10 @@ class AdminUserListCreateView(APIView):
             serializer = self.serializer_class(data=request.data)
             if serializer.is_valid():
                 user = serializer.save()
-                response_serializer = self.serializer_class(user)
-                return api_response(status.HTTP_201_CREATED, 'User created successfully', response_serializer.data)
-            return api_response(status.HTTP_400_BAD_REQUEST, 'BAD Request')
+                response_serializer = self.serializer_class(user) 
+                return api_response(status.HTTP_201_CREATED,messages.USER_CREATED_SUCCESS_MESSAGE, response_serializer.data)
+            
+            return api_response(status.HTTP_400_BAD_REQUEST,  messages.BAD_REQUEST_ERROR_MESSAGE)
         except Exception as ex:
             raise ex
 # -----------------------------------------
@@ -154,7 +155,7 @@ class AdminUserRetrieveUpdateView(APIView):
 
                 response_data = serializer.data
 
-                return api_response(status.HTTP_200_OK, 'User retrieved Successfully', response_data)
+                return api_response(status.HTTP_200_OK, messages.USER_RETRIEVED_SUCCESS_MESSAGE, response_data)
                 
         except Exception as ex:
             raise ex
@@ -174,7 +175,7 @@ class AdminUserRetrieveUpdateView(APIView):
             serializer = self.serializer_class(user, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
-                return api_response(status.HTTP_200_OK,"User updated successfully")
+                return api_response(status.HTTP_200_OK,messages.USER_UPDATED_SUCCESS_MESSAGE)
             return api_response(status.HTTP_400_BAD_REQUEST, serializer.errors)
         
         except Exception as ex:
@@ -214,9 +215,10 @@ class AdminUserRoleUpdateView(APIView):
                 user.save()
                 response_serializer = self.serializer_class(user)
 
-                return api_response(status.HTTP_200_OK, f'''User role updated successfully for {id}''', response_serializer.data)
+                return api_response(status.HTTP_200_OK, messages.USER_ROLE_UPDATED_SUCCESS_MESSAGE.format(id=id), response_serializer.data)
             else:
-                return api_response(status.HTTP_400_BAD_REQUEST, f'''No User Role Provided''')
+                return api_response(status.HTTP_400_BAD_REQUEST, f'''{messages.NO_USER_ROLE_PROVIDED}''')
+
         except Exception as ex:
             raise ex
 
@@ -248,12 +250,15 @@ class AdminUserActivateSuspendUpdateView(APIView):
                 user.is_active = True
                 user.save()
                 response_serializer = self.serializer_class(user)
-                return api_response(status.HTTP_200_OK, f'''User activated successfully for {id}''', response_serializer.data)
+                
+                return api_response(status.HTTP_200_OK, f'{messages.USER_UPDATED_SUCCESS_MESSAGE} for {id}', response_serializer.data)
+
             elif action == "suspend":
                 user.is_active = False
                 user.save()
                 response_serializer = self.serializer_class(user)
-                return api_response(status.HTTP_200_OK, f'''User suspended successfully for {id}''', response_serializer.data)
+                return api_response(status.HTTP_200_OK, f'{messages.USER_SUSPENDED_SUCCESS_MESSAGE} for {id}', response_serializer.data)
+
 
         except Exception as ex:
             raise ex
@@ -323,7 +328,7 @@ class AdminCourseListCreateView(APIView):
             serializer = self.serializer_class(page, many=True)
             
             if not queryset:
-                return api_response(status.HTTP_404_NOT_FOUND, 'Course Not Found', serializer.data)
+                return api_response(status.HTTP_404_NOT_FOUND, messages.COURSE_NOT_FOUND_MESSAGE, serializer.data)
             
             if page is not None:
                 # using custom response helper to structure the response
@@ -333,11 +338,11 @@ class AdminCourseListCreateView(APIView):
                     "current_page": paginator.page.number,
                     "results": serializer.data,
                 }
-                return api_response(status.HTTP_200_OK, 'Course List Retrieved Successfully', response_data)
+                return api_response(status.HTTP_200_OK, messages.COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE, response_data)
 
             serializer = self.serializer_class(queryset, many=True)
             
-            return api_response(status.HTTP_200_OK, 'Course List Retrieved Successfully', serializer.data)
+            return api_response(status.HTTP_200_OK, messages.COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE, serializer.data)
 
         except Exception as ex:
             raise ex
@@ -354,7 +359,7 @@ class AdminCourseListCreateView(APIView):
         if "error" in result or "non_field_errors" in result:
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response({'message': 'Course created successfully', 'data': result}, status=status.HTTP_201_CREATED)
+        return Response({'message': messages.COURSE_CREATED_SUCCESS_MESSAGE, 'data': result}, status=status.HTTP_201_CREATED)
 # -----------------------------------------
 
 # -----------------------------------------
@@ -376,7 +381,7 @@ class AdminCourseRetrieveUpdateView(APIView):
     )
     def get(self, request, id, *args, **kwargs):
         course_data = get_course_by_id(id)
-        return api_response(status.HTTP_200_OK, 'Course retrieved successfully', course_data)
+        return api_response(status.HTTP_200_OK, messages.COURSE_RETRIEVED_SUCCESS_MESSAGE, course_data)
 
     @extend_schema(
         tags=['Admin Course'],
@@ -393,7 +398,7 @@ class AdminCourseRetrieveUpdateView(APIView):
         if "error" in result or "non_field_errors" in result:
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response({'message': 'Course updated successfully', 'data': result}, status=status.HTTP_200_OK)
+        return Response({'message': messages.COURSE_UPDATED_MESSAGE, 'data': result}, status=status.HTTP_200_OK)
 # -----------------------------------------
 
 
