@@ -1,11 +1,14 @@
 # api/admin/views.py
 from nativo_english.api.shared import messages
+
+# api/admin/views.py
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiRequest, OpenApiResponse
+from drf_spectacular.types import OpenApiTypes
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiRequest, OpenApiResponse
-from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from .serializer import AdminUserSerializer
 from nativo_english.api.shared.course.serializer import CourseSerializer
 from nativo_english.api.shared.user.models import User
@@ -15,6 +18,7 @@ from django.shortcuts import get_object_or_404
 from nativo_english.api.shared.utils import api_response, api_exception_handler
 from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id
 import json
+from django.contrib.auth.hashers import make_password
 
 # -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
@@ -26,44 +30,22 @@ class AdminUserPagination(PageNumberPagination):
 
 # -----------------------------------------
 # This view corresponds to following endpoints
-# 1. Get all Users (can only be access by Admin user rol --> GET /api/admin/users/)
-# 2. Create New User user request data (can only be access by Admin user rol --> POST /api/admin/users/{id})
+# 1. Get all Users (can only be accessed by Admin user role --> GET /api/admin/users/)
+# 2. Create New User (can only be accessed by Admin user role --> POST /api/admin/users/)
 # -----------------------------------------
 class AdminUserListCreateView(APIView):
     serializer_class = AdminUserSerializer
-    permission_classes = [
-        IsAuthenticated, 
-        IsAdminUserRole
-    ]
+    permission_classes = [IsAuthenticated, IsAdminUserRole]
     pagination_class = AdminUserPagination
 
     @extend_schema(
         tags=['Admin'],
         summary="Get All users (Can be accessed by user with admin role only)",
         description="Lists all users (if filter is applied for role/suspend)",
-        parameters= [
-            # Query parameters (optional)
-            OpenApiParameter(
-                name="role",
-                location=OpenApiParameter.QUERY,
-                description="Role of the user to filter by (optional)",
-                required=False,
-                type=OpenApiTypes.STR
-            ),
-            OpenApiParameter(
-                name="is_active",
-                location=OpenApiParameter.QUERY,
-                description="Filter by active status, true or false (optional)",
-                required=False,
-                type=OpenApiTypes.BOOL
-            ),
-            OpenApiParameter(
-                name="page",
-                location=OpenApiParameter.QUERY,
-                description="get other pages data, pass the page number",
-                required=False,
-                type=OpenApiTypes.INT
-            ),
+        parameters=[
+            OpenApiParameter(name="role", location=OpenApiParameter.QUERY, description="Role of the user to filter by (optional)", required=False, type=OpenApiTypes.STR),
+            OpenApiParameter(name="is_active", location=OpenApiParameter.QUERY, description="Filter by active status, true or false (optional)", required=False, type=OpenApiTypes.BOOL),
+            OpenApiParameter(name="page", location=OpenApiParameter.QUERY, description="Get other pages data, pass the page number", required=False, type=OpenApiTypes.INT),
         ]
     )
     def get(self, request, *args, **kwargs):
@@ -80,9 +62,8 @@ class AdminUserListCreateView(APIView):
 
             if is_active is not None:
                 is_active = is_active.lower() == 'true'
-                queryset = queryset.filter(is_active = is_active)
+                queryset = queryset.filter(is_active=is_active)
 
-            
             paginator = self.pagination_class()
             page = paginator.paginate_queryset(queryset, request)
 
@@ -103,7 +84,7 @@ class AdminUserListCreateView(APIView):
             return api_response(status.HTTP_200_OK, messages.USERS_LIST_RETRIEVED_SUCCESS_MESSAGE, serializer.data)
 
         except Exception as ex:
-            raise ex
+            return api_exception_handler(ex)
 
     @extend_schema(
         tags=['Admin'],
@@ -120,93 +101,76 @@ class AdminUserListCreateView(APIView):
             
             return api_response(status.HTTP_400_BAD_REQUEST,  messages.BAD_REQUEST_ERROR_MESSAGE)
         except Exception as ex:
-            raise ex
+            return api_exception_handler(ex)
 # -----------------------------------------
 
 
 # -----------------------------------------
 # This view corresponds to following endpoints
-# 1. Retreive User by ID (can only be access by Admin user rol --> GET /api/admin/users/{id})
-# 2. Update User by ID (can only be access by Admin user rol --> PUT /api/admin/users/{id})
+# 1. Retrieve User by ID (can only be accessed by Admin user role --> GET /api/admin/users/{id})
+# 2. Update User by ID (can only be accessed by Admin user role --> PUT /api/admin/users/{id})
 # -----------------------------------------
 class AdminUserRetrieveUpdateView(APIView):
     serializer_class = AdminUserSerializer
     permission_classes = [IsAuthenticated, IsAdminUserRole]
-    pagination_class = PageNumberPagination
-
 
     @extend_schema(
         tags=['Admin'],
         summary="Retrieve User by ID (Can be accessed by user with admin role only)",
         description="Retrieves a specific user by ID if provided.",
-        parameters=[
-            OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID")
-        ],
+        parameters=[OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID")],
     )
     def get(self, request, id, *args, **kwargs):
         try:
-        # Check if Id is present:
             if id is not None:
-                # Retrieve user by ID from the URL
                 user = get_object_or_404(User, id=id)
-
-                # Serialize the user data
                 serializer = AdminUserSerializer(user)
-
                 response_data = serializer.data
 
                 return api_response(status.HTTP_200_OK, messages.USER_RETRIEVED_SUCCESS_MESSAGE, response_data)
                 
         except Exception as ex:
-            raise ex
+            return api_exception_handler(ex)
 
-    
     @extend_schema(
         tags=['Admin'],
         summary="Update User by ID (Can be accessed by user with admin role only)",
-        description="Updates the user by specific Id.",
-        parameters=[
-            OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID")
-        ],
+        description="Updates the user by specific ID.",
+        parameters=[OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID")],
     )
     def put(self, request, id=None, *args, **kwargs):
         try:
+            # Ensure the user exists
             user = get_object_or_404(User, id=id)
             serializer = self.serializer_class(user, data=request.data, partial=True)
+
             if serializer.is_valid():
                 serializer.save()
                 return api_response(status.HTTP_200_OK,messages.USER_UPDATED_SUCCESS_MESSAGE)
             return api_response(status.HTTP_400_BAD_REQUEST, serializer.errors)
         
         except Exception as ex:
-            raise ex
+            return api_exception_handler(ex)
 # -----------------------------------------
 
 
 # -----------------------------------------
 # This view corresponds to following endpoints
-# 1. Update User Role by ID (can only be access by Admin user rol --> PUT /api/admin/users/{id}/role)
+# 1. Update User Role by ID (can only be accessed by Admin user role --> PUT /api/admin/users/{id}/role)
 # -----------------------------------------
 class AdminUserRoleUpdateView(APIView):
     serializer_class = AdminUserSerializer
     permission_classes = [IsAuthenticated, IsAdminUserRole]
-    pagination_class = PageNumberPagination
 
     @extend_schema(
         tags=['Admin'],
         summary="Update User Role (Can be accessed by user with admin role only)",
         description="Updates the role of the user by ID.",
-        parameters=[
-            OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID"),
-        ],
-        request=OpenApiResponse(
-            response=AdminUserSerializer,
-            description="User creation request",
-            examples=[{'username': 'john_doe', 'email': 'john@example.com'}],
-        ),
+        parameters=[OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID")],
     )
     def put(self, request, id, *arg, **kwargs):
         try:
+            # Ensure the user exists
             user = get_object_or_404(User, id=id)
             updated_role = request.data.get('role')
 
@@ -220,7 +184,8 @@ class AdminUserRoleUpdateView(APIView):
                 return api_response(status.HTTP_400_BAD_REQUEST, f'''{messages.NO_USER_ROLE_PROVIDED}''')
 
         except Exception as ex:
-            raise ex
+            return api_exception_handler(ex, "Error updating user role.")
+
 
 # -----------------------------------------
 # This view corresponds to following endpoint
@@ -233,19 +198,25 @@ class AdminUserActivateSuspendUpdateView(APIView):
     @extend_schema(
         tags=['Admin'],
         summary="Update User Status (Can be accessed by user with admin role only)",
-        description="Updates the isActive variable of the user to true.",
+        description="Updates the isActive variable of the user to true or false (based on the action).",
         parameters=[
             OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID"),
+            OpenApiParameter("action", OpenApiTypes.STR, OpenApiParameter.PATH, required=True, description="Action to perform: 'activate' or 'suspend'"),
         ],
         request=OpenApiResponse(
             response=AdminUserSerializer,
-            description="User creation request",
+            description="User status update request",
             examples=[{'username': 'john_doe', 'email': 'john@example.com'}],
         ),
     )
-    def post(self, request, id = None, action = None, *arg, **kwargs):
+    def post(self, request, id=None, action=None, *arg, **kwargs):
         try:
+            if action not in ['activate', 'suspend']:
+                return api_response(status.HTTP_400_BAD_REQUEST, "Invalid action. Must be 'activate' or 'suspend'.")
+
             user = get_object_or_404(User, id=id)
+            
+            # Update user status based on the action
             if action == "activate":
                 user.is_active = True
                 user.save()
@@ -262,6 +233,7 @@ class AdminUserActivateSuspendUpdateView(APIView):
 
         except Exception as ex:
             raise ex
+
         
 # -----------------------------------------
 # This view corresponds to following endpoints
@@ -280,8 +252,7 @@ class AdminCourseListCreateView(APIView):
         tags=['Admin Course'],
         summary="Get All Courses (Admin access only)",
         description="Lists all courses with optional filters by title and is_paid.",
-        parameters= [
-            # Query parameters (optional)
+        parameters=[
             OpenApiParameter(
                 name="title",
                 location=OpenApiParameter.QUERY,
@@ -299,7 +270,7 @@ class AdminCourseListCreateView(APIView):
             OpenApiParameter(
                 name="page",
                 location=OpenApiParameter.QUERY,
-                description="get other pages data, pass the page number",
+                description="Page number to retrieve data from",
                 required=False,
                 type=OpenApiTypes.INT
             ),
@@ -307,21 +278,12 @@ class AdminCourseListCreateView(APIView):
     )
     def get(self, request, *args, **kwargs):
         try:
-            # Get query parameters for filtering
+            # Retrieve query parameters for filtering
             title = request.query_params.get('title')
             is_paid = request.query_params.get('is_paid')
 
             queryset = get_all_courses(filter_title=title, filter_is_paid=is_paid)
 
-            
-            # if title:
-            #     queryset = queryset.filter(title=title)
-
-            # if is_paid is not None:
-                # is_paid = is_paid.lower() == 'true'
-                # queryset = queryset.filter(is_paid = is_paid)
-
-            
             paginator = self.pagination_class()
             page = paginator.paginate_queryset(queryset, request)
 
@@ -331,7 +293,7 @@ class AdminCourseListCreateView(APIView):
                 return api_response(status.HTTP_404_NOT_FOUND, messages.COURSE_NOT_FOUND_MESSAGE, serializer.data)
             
             if page is not None:
-                # using custom response helper to structure the response
+                serializer = self.serializer_class(page, many=True)
                 response_data = {
                     "count": paginator.page.paginator.count,
                     "num_pages": paginator.page.paginator.num_pages,
@@ -349,12 +311,21 @@ class AdminCourseListCreateView(APIView):
 
     @extend_schema(
         tags=['Admin Course'],
-        summary="Creates a new course (Can be accessed by user with admin role only)",
+        summary="Create a New Course (Admin access only)",
         description="Creates a new course by Admin User.",
     )
-
     def post(self, request, *args, **kwargs):
-        result = create_course(request.data)
+        try:
+            result = create_course(request.data)
+
+            if "error" in result or "non_field_errors" in result:
+                return api_response(status.HTTP_400_BAD_REQUEST, "Error creating course", result)
+            
+            return api_response(status.HTTP_201_CREATED, 'Course created successfully', result)
+
+        except Exception as ex:
+            raise ex
+
 
         if "error" in result or "non_field_errors" in result:
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
@@ -391,9 +362,19 @@ class AdminCourseRetrieveUpdateView(APIView):
             OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="Course ID")
         ],
     )
-
     def put(self, request, id=None, *args, **kwargs):
-        result = update_course(id, request.data)
+        try:
+            result = update_course(id, request.data)
+
+            # Check for validation or non-field errors
+            if "error" in result or "non_field_errors" in result:
+                return api_response(status.HTTP_400_BAD_REQUEST, 'Bad request: ' + str(result))
+
+            return api_response(status.HTTP_200_OK, 'Course updated successfully', result)
+
+        except Exception as ex:
+            # Catch any exception and return it with an appropriate error response
+            return api_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(ex))
 
         if "error" in result or "non_field_errors" in result:
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
