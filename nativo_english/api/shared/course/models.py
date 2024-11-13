@@ -20,8 +20,20 @@ class Course(models.Model):
     is_active = models.BooleanField(default=False)
 
     # Default Metadata fields
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_created')
-    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_modified')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_created', db_column='created_by')
+    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_modified', db_column='modified_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+# Course Section Model
+class CourseSection(models.Model):
+    section_title = models.CharField(max_length=200, null=True)
+    section_description = models.TextField(null=True)
+    fk_course_id = models.ForeignKey(Course, on_delete=models.CASCADE, db_column='fk_course_id')
+
+    # Default Metadata fields
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_section_created', db_column='created_by')
+    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_section_modified', db_column='modified_by')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -31,12 +43,12 @@ class CourseLesson(models.Model):
     lesson_title = models.CharField(max_length=200)
     lesson_description = models.TextField(null=True)
     lesson_position = models.PositiveIntegerField()
-    fk_course_id = models.ForeignKey(Course, on_delete=models.CASCADE)
+    fk_section_id = models.ForeignKey(CourseSection, on_delete=models.CASCADE, db_column='fk_section_id')
     is_active = models.BooleanField(default=False)
 
     # Default Metadata fields
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lesson_created')
-    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lesson_modified')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lesson_created',db_column='created_by')
+    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lesson_modified', db_column='modified_by')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -65,8 +77,8 @@ class LessonContent(models.Model):
     content_image_url = models.URLField(blank=True, null=True)  # Image URL, optional
 
     # Default Metadata fields
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lesson_content_created')
-    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lesson_content_modified')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lesson_content_created', db_column='created_by')
+    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lesson_content_modified', db_column='modified_by')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
@@ -90,8 +102,8 @@ class CourseEnrollment(models.Model):
     is_active = models.BooleanField(default=False)
 
     # Default Metadata fields
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_enrollment_created')
-    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_enrollment_modified')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_enrollment_created', db_column='created_by')
+    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_enrollment_modified', db_column='modified_by')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -103,8 +115,8 @@ class CourseRating(models.Model):
     rating = models.FloatField(max_length=5)
 
     # Default Metadata fields
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_rating_created')
-    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_rating_modified')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_rating_created', db_column='created_by')
+    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_rating_modified', db_column='modified_by')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -116,7 +128,7 @@ class CourseFeedback(models.Model):
     content = models.TextField()
 
     # Default Metadata fields
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_feedback_created')
-    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_feedback_modified')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_feedback_created', db_column='created_by')
+    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_feedback_modified', db_column='modified_by')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -8,19 +8,25 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
-from .serializer import AdminUserSerializer #,UserSerializer
-from nativo_english.api.shared.course.serializer import CourseSerializer
+from .serializer import AdminUserSerializer
+from nativo_english.api.shared.course.serializer import CourseSerializer, CourseSectionSerializer, CourseLessonSerializer
+from .serializer import AdminUserSerializer
+from nativo_english.api.shared.course.serializer import CourseSerializer, CourseSectionSerializer, CourseLessonSerializer
 from nativo_english.api.shared.user.models import User
 from .permissions import IsAdminUserRole
-from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from nativo_english.api.shared.utils import api_response
-from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id
+from nativo_english.api.shared.utils import api_response, api_exception_handler
+from rest_framework.exceptions import NotFound
+from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id, get_all_course_sections, get_course_section_by_id, update_course_section, create_course_section, create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson
+from nativo_english.api.shared.utils import api_response, api_exception_handler
+from rest_framework.exceptions import NotFound
+from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id, get_all_course_sections, get_course_section_by_id, update_course_section, create_course_section, create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson
 import json
 from django.contrib.auth.hashers import make_password
 from .swagger_schema import GET_USER_LIST_SCHEMA, POST_USER_SCHEMA , GET_USER_BY_ID_SCHEMA , UPDATE_USER_BY_ID_SCHEMA, UPDATE_USER_ROLE_SCHEMA, UPDATE_USER_STATUS_SCHEMA, GET_ADMIN_COURSE_LIST_SCHEMA, POST_ADMIN_COURSE_CREATE_SCHEMA, GET_ADMIN_COURSE_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_UPDATE_SCHEMA
-
 
 # -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
@@ -60,6 +66,9 @@ class AdminUserListCreateView(APIView):
         if is_active is not None:
             is_active = is_active.lower() == 'true'
             queryset = queryset.filter(is_active=is_active)
+        
+        if not queryset.exists():
+            return api_response(status.HTTP_404_NOT_FOUND, messages.NO_USER_FOUND)
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
@@ -158,19 +167,9 @@ class AdminUserRoleUpdateView(APIView):
             # Serialize response
             response_serializer = self.serializer_class(user)
 
-            return Response(
-                {
-                    'status': 200,
-                    'message': f"{messages.USER_ROLE_UPDATED_SUCCESS_MESSAGE } for ID: {id}",
-                    'data': response_serializer.data
-                },
-                status=status.HTTP_200_OK
-            )
-
-        return Response(
-            {'status': 400, 'message': messages.NO_USER_ROLE_PROVIDED},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+            return api_response(status.HTTP_200_OK, messages.USER_ROLE_UPDATED_SUCCESS_MESSAGE.format(id=id), response_serializer.data)
+        else:
+            return api_response(status.HTTP_400_BAD_REQUEST, f'''{messages.NO_USER_ROLE_PROVIDED}''')
 
 
 
@@ -184,6 +183,7 @@ class AdminUserActivateSuspendUpdateView(APIView):
 
     @extend_schema(**UPDATE_USER_STATUS_SCHEMA)  # Use the corrected schema
     def post(self, request, id=None, action=None, *arg, **kwargs):
+        # action = kwargs.get('action')
         if action not in ['activate', 'suspend']:
             return api_response(status.HTTP_400_BAD_REQUEST, messages.INVALID_ACTION_MESSAGE)
 
@@ -218,14 +218,12 @@ class AdminCourseListCreateView(APIView):
     pagination_class = AdminUserPagination
 
     @extend_schema(**GET_ADMIN_COURSE_LIST_SCHEMA)
-
     def get(self, request, *args, **kwargs):
         # Retrieve query parameters for filtering
         title = request.query_params.get('title')
         is_paid = request.query_params.get('is_paid')
 
         queryset = get_all_courses(filter_title=title, filter_is_paid=is_paid)
-
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
 
@@ -289,39 +287,255 @@ class AdminCourseRetrieveUpdateView(APIView):
 
     # Return success message
      return api_response(status.HTTP_200_OK, messages.COURSE_UPDATED_MESSAGE, result)
+# -----------------------------------------
 
 # -----------------------------------------
 
+# -----------------------------------------
+# This view corresponds to following endpoints
+# 1. Get all Courses Section(can only be access by Admin user rol --> GET /api/admin/course/section)
+# 2. Create New Course Section user request data (can only be access by Admin user rol --> POST /api/admin/course/section)
+# -----------------------------------------
+class AdminCourseSectionListCreateView(APIView):
+    serializer_class = CourseSectionSerializer
+    permission_classes = [
+        IsAuthenticated, 
+        IsAdminUserRole
+    ]
+    pagination_class = AdminUserPagination
+
+    @extend_schema(
+        tags=['Admin Course Section'],
+        summary="Get All Courses Sections (Admin access only)",
+        description="Lists all courses sections with optional filters by title and course_id.",
+        parameters=[
+        OpenApiParameter(
+            name="title",
+            location=OpenApiParameter.QUERY,
+            description="Title of the course section to filter by (optional).",
+            required=False,
+            type=OpenApiTypes.STR
+        ),
+        OpenApiParameter(
+            name="course_id",
+            location=OpenApiParameter.QUERY,
+            description="ID of the course to retrieve associated sections (optional).",
+            required=False,
+            type=OpenApiTypes.INT
+        ),
+        OpenApiParameter(
+            name="page",
+            location=OpenApiParameter.QUERY,
+            description="Page number for paginated results (optional).",
+            required=False,
+            type=OpenApiTypes.INT
+        ),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        title = request.query_params.get('title')
+        course_id = request.query_params.get('course_id')
+
+        sections = get_all_course_sections(filter_title=title, course_id=course_id)
+
+        if not sections:
+            return api_response(status.HTTP_404_NOT_FOUND,messages.SECTION_NOT_FOUND_MESSAGE)
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(sections, request)
+
+        if page is not None:
+            response_data = {
+                "count": paginator.page.paginator.count,
+                "num_pages": paginator.page.paginator.num_pages,
+                "current_page": paginator.page.number,
+                "results": page,
+            }
+            return api_response(status.HTTP_200_OK, messages.SECTION_LIST_RETRIEVED_SUCCESS_MESSAGE, response_data)
+
+        return api_response(status.HTTP_200_OK, messages.SECTION_LIST_RETRIEVED_SUCCESS_MESSAGE, sections)
+
+    @extend_schema(
+        tags=['Admin Course Section'],
+        summary="Creates a new course section (Can be accessed by user with admin role only)",
+        description="Creates a new course section by Admin User.",
+    )
+
+    def post(self, request, *args, **kwargs):
+        result = create_course_section(request.data)
+        if isinstance(result, dict):
+            if 'errors' in result:
+                return api_response(status.HTTP_400_BAD_REQUEST, messages.SECTION_CREATION_ERROR_MESSAGE, result['errors'])
+        
+        return api_response(status.HTTP_201_CREATED, messages.COURSE_SECTION_CREATED_SUCCESS_MESSAGE, result)
+# -----------------------------------------
 
 # -----------------------------------------
-# This view corresponds to following endpoint
-# 1. Update user isActive status to false(can only be access by Admin user rol --> PUT /api/admin/users/{id}/suspend/)
+# This view corresponds to following endpoints
+# 1. Retreive Course Section by ID (can only be access by Admin user rol --> GET /api/admin/course/section/{id})
+# 2. Update Course Section by ID (can only be access by Admin user rol --> PUT /api/admin/course/section/{id})
 # -----------------------------------------
-# class AdminUserSuspendUpdateView(APIView):
-#     serializer_class = AdminUserSerializer
-#     permission_classes = [IsAuthenticated, IsAdminUserRole]
+class AdminCourseSectionRetrieveUpdateView(APIView):
+    serializer_class = CourseSectionSerializer
+    permission_classes = [IsAuthenticated, IsAdminUserRole]
+    pagination_class = PageNumberPagination
 
-#     @extend_schema(
-#         tags=['Admin'],
-#         summary="Update User Role (Can be accessed by user with admin role only)",
-#         description="Updates the role of the user by ID.",
-#         parameters=[
-#             OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID"),
-#         ],
-#         request=OpenApiResponse(
-#             response=AdminUserSerializer,
-#             description="User creation request",
-#             examples=[{'username': 'john_doe', 'email': 'john@example.com'}],
-#         ),
-#     )
-#     def put(self, request, id, *arg, **kwargs):
-#         try:
-#             user = get_object_or_404(User, id=id)
+    @extend_schema(
+        tags=['Admin Course Section'],
+        summary="Retrieve Course Section by ID (Admin access only)",
+        # parameters=[
+        #     OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="Course Section ID")
+        # ]
+    )
+    def get(self, request, course_section_id,*args, **kwargs):
+        course_data = get_course_section_by_id(course_section_id)
+        return api_response(status.HTTP_200_OK, messages.COURSE_SECTION_RETRIEVED_SUCCESS_MESSAGE, course_data)
 
-#             if user.is_active:
-#                 user.is_active = False
-#                 response_serializer = self.serializer_class(user)
+    @extend_schema(
+        tags=['Admin Course Section'],
+        summary="Update course section by ID (Can be accessed by user with admin role only)",
+        description="Updates the course section by specific Id.",
+        # parameters=[
+        #     OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="Course Section ID")
+        # ],
+    )
 
-#                 return api_response(status.HTTP_200_OK, '''User status updated successfully for {id}''', response_serializer.data)
-#         except Exception as ex:
-#             raise ex
+    def put(self, request, course_section_id=None, *args, **kwargs):
+        result = update_course_section(course_section_id, request.data)
+
+        if "error" in result or "non_field_errors" in result:
+            return api_response(status.HTTP_400_BAD_REQUEST, messages.BAD_REQUEST_ERROR_MESSAGE, result)
+        
+        return api_response(status.HTTP_200_OK, messages.COURSE_SECTION_UPDATED_SUCCESS_MESSAGE, result)
+# -----------------------------------------
+
+# -----------------------------------------
+# This view corresponds to following endpoints
+# 1. Get all Courses Lesson(can only be access by Admin user rol --> GET /api/admin/course/section/lesson)
+# 2. Create New Course Lesson user request data (can only be access by Admin user rol --> POST /api/admin/course/section/lesson)
+# -----------------------------------------
+
+class AdminCourseLessonListCreateView(APIView):
+    serializer_class = CourseLessonSerializer
+    permission_classes = [
+        IsAuthenticated, 
+        IsAdminUserRole
+    ]
+    pagination_class = AdminUserPagination
+
+    @extend_schema(
+        tags=['Admin Course Lesson'],
+        summary="Get All Courses Lessons (Admin access only)",
+        description="Lists all courses lessons with optional filters by title, section_id and course_id.",
+        parameters=[
+        OpenApiParameter(
+            name="title",
+            location=OpenApiParameter.QUERY,
+            description="Title of the course section to filter by (optional).",
+            required=False,
+            type=OpenApiTypes.STR
+        ),
+        OpenApiParameter(
+            name="course_id",
+            location=OpenApiParameter.QUERY,
+            description="ID of the course to retrieve associated lessons (optional).",
+            required=False,
+            type=OpenApiTypes.INT
+        ),
+        OpenApiParameter(
+            name="section_id",
+            location=OpenApiParameter.QUERY,
+            description="ID of the section to retrieve associated lessons (optional).",
+            required=False,
+            type=OpenApiTypes.INT
+        ),
+        OpenApiParameter(
+            name="page",
+            location=OpenApiParameter.QUERY,
+            description="Page number for paginated results (optional).",
+            required=False,
+            type=OpenApiTypes.INT
+        ),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        title = request.query_params.get('title')
+        course_id = request.query_params.get('course_id')
+        section_id = request.query_params.get('section_id')
+        # course_id = int(course_id) if course_id else None
+        # section_id = int(section_id) if section_id else None
+        print(course_id, section_id)
+
+        lessons = get_all_course_lessons(filter_title=title, course_id=course_id, section_id=section_id)
+
+        if not lessons:
+            return api_response(status.HTTP_404_NOT_FOUND,messages.LESSON_NOT_FOUND_MESSAGE)
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(lessons, request)
+
+        if page is not None:
+            response_data = {
+                "count": paginator.page.paginator.count,
+                "num_pages": paginator.page.paginator.num_pages,
+                "current_page": paginator.page.number,
+                "results": page,
+            }
+            return api_response(status.HTTP_200_OK, messages.LESSON_LIST_RETRIEVED_SUCCESS_MESSAGE, response_data)
+
+        return api_response(status.HTTP_200_OK, messages.LESSON_LIST_RETRIEVED_SUCCESS_MESSAGE, lessons)
+
+    @extend_schema(
+        tags=['Admin Course Lesson'],
+        summary="Creates a new course lesson (Can be accessed by user with admin role only)",
+        description="Creates a new course lesson by Admin User.",
+    )
+
+    def post(self, request, *args, **kwargs):
+        result = create_course_lesson(request.data)
+
+        if isinstance(result, dict):
+            if 'errors' in result:
+                return api_response(status.HTTP_400_BAD_REQUEST, messages.LESSON_CREATION_ERROR_MESSAGE, result['errors'])
+        
+        return api_response(status.HTTP_201_CREATED, messages.COURSE_LESSON_CREATED_SUCCESS_MESSAGE, result)
+# -----------------------------------------
+
+# -----------------------------------------
+# This view corresponds to following endpoints
+# 1. Retreive Course Lesson by ID (can only be access by Admin user rol --> GET /api/admin/course/section/lesson/{id})
+# 2. Update Course Lesson by ID (can only be access by Admin user rol --> PUT /api/admin/course/section/lesson/{id})
+# -----------------------------------------
+class AdminCourseLessonRetrieveUpdateView(APIView):
+    serializer_class = CourseLessonSerializer
+    permission_classes = [IsAuthenticated, IsAdminUserRole]
+    pagination_class = PageNumberPagination
+
+    @extend_schema(
+        tags=['Admin Course Lesson'],
+        summary="Retrieve Course Lesson by ID (Admin access only)",
+        # parameters=[
+        #     OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="Course Section ID")
+        # ]
+    )
+    def get(self, request, course_lesson_id,*args, **kwargs):
+        course_data = get_course_lesson_by_id(course_lesson_id)
+        return api_response(status.HTTP_200_OK, messages.COURSE_LESSON_RETRIEVED_SUCCESS_MESSAGE, course_data)
+
+    @extend_schema(
+        tags=['Admin Course Lesson'],
+        summary="Update course lesson by ID (Can be accessed by user with admin role only)",
+        description="Updates the course lesson by specific Id.",
+        # parameters=[
+        #     OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="Course Section ID")
+        # ],
+    )
+
+    def put(self, request, course_lesson_id=None, *args, **kwargs):
+        result = update_course_lesson(course_lesson_id, request.data)
+
+        if "error" in result or "non_field_errors" in result:
+            return api_response(status.HTTP_400_BAD_REQUEST, messages.BAD_REQUEST_ERROR_MESSAGE, result)
+        
+        return api_response(status.HTTP_200_OK, messages.COURSE_LESSON_UPDATED_SUCCESS_MESSAGE, result)
+# -----------------------------------------
