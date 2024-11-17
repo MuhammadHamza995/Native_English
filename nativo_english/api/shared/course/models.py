@@ -6,10 +6,10 @@ from nativo_english.api.shared.user.models import User
 # Course Model
 class Course(models.Model):
     
-    MODE_CHOICES = {
+    MODE_CHOICES = [
         ('self', 'Self-pace'),
         ('live', 'live'),
-    }
+    ]
 
     title = models.CharField(max_length=200)
     description = models.TextField()
