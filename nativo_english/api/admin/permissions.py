@@ -1,6 +1,7 @@
 from rest_framework import permissions
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from nativo_english.api.shared import messages
 
 class IsAdminUserRole(permissions.BasePermission):
     """
@@ -15,17 +16,28 @@ class IsAdminUserRole(permissions.BasePermission):
             auth_header = request.headers.get('Authorization')
             if auth_header and auth_header.startswith('Bearer '):
                 token = auth_header.split(' ')[1]
+            
+            if not token:
+                raise AuthenticationFailed("Authorization token is missing.")
 
-            # Use JWTAuthentication to get the user's role from the token
+            token = auth_header.split(' ')[1]
+
+            # Use JWTAuthentication to validate the token and retrieve the user's role
             jwt_auth = JWTAuthentication()
             validated_token = jwt_auth.get_validated_token(token)
-            user_role = validated_token.get('role')  # get 'role' with 'role' key in JWT
+            user_role = validated_token.get('role')  # Extract 'role' from JWT payload
         
+        except AuthenticationFailed as auth_error:
+            # Handle cases where token is missing, invalid, or expired
+            raise AuthenticationFailed("Invalid or expired token. Please log in again.")
         except Exception as e:
+            # Catch other unexpected errors
             print(f"Token validation error: {e}")
-
+            raise AuthenticationFailed("An error occurred during token validation.")
+        
         if user_role == 'admin':
             return True
         
         # Raise a permission denied exception with a custom message
-        raise PermissionDenied(detail="You do not have permission to perform this action.")
+        raise PermissionDenied(detail=messages.PERMISSION_DENIED_MESSAGE)
+    

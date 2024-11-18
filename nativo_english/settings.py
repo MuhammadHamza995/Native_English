@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'nativo_english.api.shared',
     'nativo_english.api.shared.auth',
     'nativo_english.api.shared.user',
+    'nativo_english.api.shared.course',
 ]
 
 REST_FRAMEWORK = {
@@ -74,7 +75,7 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'NATIVO ENGLISH APIs',
     'DESCRIPTION': 'APIs to access NATIVO ENGLISH PLATFORM',
     'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
+    'SERVE_INCLUDE_SCHEMA': True,
     'SWAGGER_UI_DIST': 'SIDECAR',  # shorthand to use the sidecar instead
     'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
     'REDOC_DIST': 'SIDECAR',
@@ -174,10 +175,16 @@ USE_TZ = True
 
 AUTH_USER_MODEL  = 'User.user'
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
+# # Static files (CSS, JavaScript, Images)
+# # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# If you don't already have this, add the static directory paths here
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',  # Add a static directory if not present
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -207,3 +214,8 @@ LOGGING = {
         },
     },
 }
+
+SECURE_SSL_REDIRECT = False
+
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True

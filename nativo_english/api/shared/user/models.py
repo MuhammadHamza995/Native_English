@@ -3,10 +3,10 @@ from django.db import models
 
 # Extending the default user setup of Django
 class User(AbstractUser):
-    ROLE_CHOICES = {
+    ROLE_CHOICES = [
         ('admin', 'Admin'),
         ('teacher', 'Teacher'),
         ('student', 'Student'),
-    }
+    ]
     
     role = models.CharField(max_length=100, choices=ROLE_CHOICES, blank=True, null=True)
