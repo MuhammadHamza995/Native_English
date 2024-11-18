@@ -33,12 +33,22 @@ class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
+     serializer = self.get_serializer(data=request.data)
+ 
+    # The is_valid() method will raise a ValidationError if the data is invalid.
+    # No need for try-except, as the middleware will handle the exception
+     serializer.is_valid(raise_exception=True)
+    
+     return api_response(status.HTTP_200_OK, message='Login Successful', data=serializer.validated_data)
 
-        try:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            
-            return api_response(status.HTTP_200_OK, message='Login Successful', data=serializer.validated_data)
         
-        except Exception as ex:
-            return api_exception_handler(ex, None)
+
+# This function will check for token present in Authorization header or not
+def is_token_present_in_header(request):
+    auth_header = request.headers.get('Authorization')
+    
+    if auth_header and auth_header.startswith('Bearer '):
+        return auth_header.split(' ')[1]
+
+    # If no token or invalid header, return None
+    return None

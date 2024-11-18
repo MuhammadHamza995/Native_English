@@ -9,16 +9,18 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
-from .serializer import AdminUserSerializer
+from .serializer import AdminUserSerializer #,UserSerializer
 from nativo_english.api.shared.course.serializer import CourseSerializer
 from nativo_english.api.shared.user.models import User
 from .permissions import IsAdminUserRole
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from nativo_english.api.shared.utils import api_response, api_exception_handler
+from nativo_english.api.shared.utils import api_response
 from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id
 import json
 from django.contrib.auth.hashers import make_password
+from .swagger_schema import GET_USER_LIST_SCHEMA, POST_USER_SCHEMA , GET_USER_BY_ID_SCHEMA , UPDATE_USER_BY_ID_SCHEMA, UPDATE_USER_ROLE_SCHEMA, UPDATE_USER_STATUS_SCHEMA, GET_ADMIN_COURSE_LIST_SCHEMA, POST_ADMIN_COURSE_CREATE_SCHEMA, GET_ADMIN_COURSE_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_UPDATE_SCHEMA
+
 
 # -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
@@ -38,70 +40,64 @@ class AdminUserListCreateView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUserRole]
     pagination_class = AdminUserPagination
 
-    @extend_schema(
-        tags=['Admin'],
-        summary="Get All users (Can be accessed by user with admin role only)",
-        description="Lists all users (if filter is applied for role/suspend)",
-        parameters=[
-            OpenApiParameter(name="role", location=OpenApiParameter.QUERY, description="Role of the user to filter by (optional)", required=False, type=OpenApiTypes.STR),
-            OpenApiParameter(name="is_active", location=OpenApiParameter.QUERY, description="Filter by active status, true or false (optional)", required=False, type=OpenApiTypes.BOOL),
-            OpenApiParameter(name="page", location=OpenApiParameter.QUERY, description="Get other pages data, pass the page number", required=False, type=OpenApiTypes.INT),
-        ]
-    )
+    # ------------------------------------
+    @extend_schema(**GET_USER_LIST_SCHEMA)
     def get(self, request, *args, **kwargs):
-        try:
-            # Get query parameters for filtering
-            role = request.query_params.get('role')
-            is_active = request.query_params.get('is_active')
+        '''
+            GET USER LIST METHOD
+            GET /api/admin/users/ (Get all users with some filter, and can only be accessible by Admin role)  
+        '''
+        # Get query parameters for filtering
+        role = request.query_params.get('role')
+        is_active = request.query_params.get('is_active')
 
-            # Get all users first
-            queryset = User.objects.only("id", "username", "email", "first_name", "last_name", "is_active")
-            
-            if role:
-                queryset = queryset.filter(role=role)
+        # Get all users first
+        queryset = User.objects.only("id", "username", "email", "first_name", "last_name", "is_active")
+        
+        if role:
+            queryset = queryset.filter(role=role)
 
-            if is_active is not None:
-                is_active = is_active.lower() == 'true'
-                queryset = queryset.filter(is_active=is_active)
+        if is_active is not None:
+            is_active = is_active.lower() == 'true'
+            queryset = queryset.filter(is_active=is_active)
 
-            paginator = self.pagination_class()
-            page = paginator.paginate_queryset(queryset, request)
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request)
 
-            serializer = self.serializer_class(page, many=True)
-            
-            if page is not None:
-                # using custom response helper to structure the response
-                response_data = {
-                    "count": paginator.page.paginator.count,
-                    "num_pages": paginator.page.paginator.num_pages,
-                    "current_page": paginator.page.number,
-                    "results": serializer.data,
-                }
-                return api_response(status.HTTP_200_OK, messages.USERS_LIST_RETRIEVED_SUCCESS_MESSAGE, response_data)
+        serializer = self.serializer_class(page, many=True)
+        
+        if page is not None:
+            # using custom response helper to structure the response
+            response_data = {
+                "count": paginator.page.paginator.count,
+                "num_pages": paginator.page.paginator.num_pages,
+                "current_page": paginator.page.number,
+                "results": serializer.data,
+            }
+            return api_response(status.HTTP_200_OK, messages.USERS_LIST_RETRIEVED_SUCCESS_MESSAGE, response_data)
 
-            serializer = self.serializer_class(queryset, many=True)
-            
-            return api_response(status.HTTP_200_OK, messages.USERS_LIST_RETRIEVED_SUCCESS_MESSAGE, serializer.data)
+        serializer = self.serializer_class(queryset, many=True)
+        
+        return api_response(status.HTTP_200_OK, messages.USERS_LIST_RETRIEVED_SUCCESS_MESSAGE, serializer.data)
+        
+    # ------------------------------------
+    
 
-        except Exception as ex:
-            return api_exception_handler(ex)
+    # ------------------------------------
+    # POST USER LIST METHOD
+    # POST /api/admin/users/ (Create new user, and can only be accessible by Admin role)
+    # ------------------------------------
+    
 
-    @extend_schema(
-        tags=['Admin'],
-        summary="Creates a new User (Can be accessed by user with admin role only)",
-        description="Creates a new user by Admin User.",
-    )
+    @extend_schema(**POST_USER_SCHEMA)  # Extending the schema with the updated schema
     def post(self, request, *args, **kwargs):
-        try:
-            serializer = self.serializer_class(data=request.data)
-            if serializer.is_valid():
-                user = serializer.save()
-                response_serializer = self.serializer_class(user) 
-                return api_response(status.HTTP_201_CREATED,messages.USER_CREATED_SUCCESS_MESSAGE, response_serializer.data)
-            
-            return api_response(status.HTTP_400_BAD_REQUEST,  messages.BAD_REQUEST_ERROR_MESSAGE)
-        except Exception as ex:
-            return api_exception_handler(ex)
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            response_serializer = self.serializer_class(user)
+            return api_response(status.HTTP_201_CREATED, messages.USER_CREATED_SUCCESS_MESSAGE, response_serializer.data)
+
+        return api_response(status.HTTP_400_BAD_REQUEST, messages.BAD_REQUEST_ERROR_MESSAGE)
 # -----------------------------------------
 
 
@@ -114,43 +110,29 @@ class AdminUserRetrieveUpdateView(APIView):
     serializer_class = AdminUserSerializer
     permission_classes = [IsAuthenticated, IsAdminUserRole]
 
-    @extend_schema(
-        tags=['Admin'],
-        summary="Retrieve User by ID (Can be accessed by user with admin role only)",
-        description="Retrieves a specific user by ID if provided.",
-        parameters=[OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID")],
-    )
+    @extend_schema(**GET_USER_BY_ID_SCHEMA)
     def get(self, request, id, *args, **kwargs):
-        try:
-            if id is not None:
-                user = get_object_or_404(User, id=id)
-                serializer = AdminUserSerializer(user)
-                response_data = serializer.data
-
-                return api_response(status.HTTP_200_OK, messages.USER_RETRIEVED_SUCCESS_MESSAGE, response_data)
-                
-        except Exception as ex:
-            return api_exception_handler(ex)
-
-    @extend_schema(
-        tags=['Admin'],
-        summary="Update User by ID (Can be accessed by user with admin role only)",
-        description="Updates the user by specific ID.",
-        parameters=[OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID")],
-    )
-    def put(self, request, id=None, *args, **kwargs):
-        try:
-            # Ensure the user exists
+        if id is not None:
             user = get_object_or_404(User, id=id)
-            serializer = self.serializer_class(user, data=request.data, partial=True)
+            serializer = AdminUserSerializer(user)
+            response_data = serializer.data
 
-            if serializer.is_valid():
-                serializer.save()
-                return api_response(status.HTTP_200_OK,messages.USER_UPDATED_SUCCESS_MESSAGE)
-            return api_response(status.HTTP_400_BAD_REQUEST, serializer.errors)
+            return api_response(status.HTTP_200_OK, messages.USER_RETRIEVED_SUCCESS_MESSAGE, response_data)
+                
+    @extend_schema(**UPDATE_USER_BY_ID_SCHEMA)  # Extending the schema with the updated schema
+    def put(self, request, id=None, *args, **kwargs):
+        # Ensure the user exists
+        user = get_object_or_404(User, id=id)
         
-        except Exception as ex:
-            return api_exception_handler(ex)
+        # Update the user instance with partial data
+        serializer = UserSerializer(user, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return api_response(status.HTTP_200_OK, messages.USER_UPDATED_SUCCESS_MESSAGE)
+
+        return api_response(status.HTTP_400_BAD_REQUEST, serializer.errors)
+ 
 # -----------------------------------------
 
 
@@ -158,33 +140,38 @@ class AdminUserRetrieveUpdateView(APIView):
 # This view corresponds to following endpoints
 # 1. Update User Role by ID (can only be accessed by Admin user role --> PUT /api/admin/users/{id}/role)
 # -----------------------------------------
+
 class AdminUserRoleUpdateView(APIView):
     serializer_class = AdminUserSerializer
-    permission_classes = [IsAuthenticated, IsAdminUserRole]
+    permission_classes = [IsAuthenticated, IsAdminUserRole]  # Custom permission
 
-    @extend_schema(
-        tags=['Admin'],
-        summary="Update User Role (Can be accessed by user with admin role only)",
-        description="Updates the role of the user by ID.",
-        parameters=[OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID")],
-    )
+    @extend_schema(**UPDATE_USER_ROLE_SCHEMA)  # Use the schema defined in the schema file
     def put(self, request, id, *arg, **kwargs):
-        try:
-            # Ensure the user exists
-            user = get_object_or_404(User, id=id)
-            updated_role = request.data.get('role')
+        # Ensure the user exists
+        user = get_object_or_404(User, id=id)
+        updated_role = request.data.get('role')
 
-            if updated_role:
-                user.role = updated_role
-                user.save()
-                response_serializer = self.serializer_class(user)
+        if updated_role:
+            user.role = updated_role
+            user.save()
 
-                return api_response(status.HTTP_200_OK, messages.USER_ROLE_UPDATED_SUCCESS_MESSAGE.format(id=id), response_serializer.data)
-            else:
-                return api_response(status.HTTP_400_BAD_REQUEST, f'''{messages.NO_USER_ROLE_PROVIDED}''')
+            # Serialize response
+            response_serializer = self.serializer_class(user)
 
-        except Exception as ex:
-            return api_exception_handler(ex, "Error updating user role.")
+            return Response(
+                {
+                    'status': 200,
+                    'message': f"{messages.USER_ROLE_UPDATED_SUCCESS_MESSAGE } for ID: {id}",
+                    'data': response_serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            {'status': 400, 'message': messages.NO_USER_ROLE_PROVIDED},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
 
 
 # -----------------------------------------
@@ -195,44 +182,26 @@ class AdminUserActivateSuspendUpdateView(APIView):
     serializer_class = AdminUserSerializer
     permission_classes = [IsAuthenticated, IsAdminUserRole]
 
-    @extend_schema(
-        tags=['Admin'],
-        summary="Update User Status (Can be accessed by user with admin role only)",
-        description="Updates the isActive variable of the user to true or false (based on the action).",
-        parameters=[
-            OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="User ID"),
-            OpenApiParameter("action", OpenApiTypes.STR, OpenApiParameter.PATH, required=True, description="Action to perform: 'activate' or 'suspend'"),
-        ],
-        request=OpenApiResponse(
-            response=AdminUserSerializer,
-            description="User status update request",
-            examples=[{'username': 'john_doe', 'email': 'john@example.com'}],
-        ),
-    )
+    @extend_schema(**UPDATE_USER_STATUS_SCHEMA)  # Use the corrected schema
     def post(self, request, id=None, action=None, *arg, **kwargs):
-        try:
-            if action not in ['activate', 'suspend']:
-                return api_response(status.HTTP_400_BAD_REQUEST, "Invalid action. Must be 'activate' or 'suspend'.")
+        if action not in ['activate', 'suspend']:
+            return api_response(status.HTTP_400_BAD_REQUEST, messages.INVALID_ACTION_MESSAGE)
 
-            user = get_object_or_404(User, id=id)
+        user = get_object_or_404(User, id=id)
+        
+        # Update user status based on the action
+        if action == "activate":
+            user.is_active = True
+            user.save()
+            response_serializer = self.serializer_class(user)
             
-            # Update user status based on the action
-            if action == "activate":
-                user.is_active = True
-                user.save()
-                response_serializer = self.serializer_class(user)
-                
-                return api_response(status.HTTP_200_OK, f'{messages.USER_UPDATED_SUCCESS_MESSAGE} for {id}', response_serializer.data)
+            return api_response(status.HTTP_200_OK, f'{messages.USER_UPDATED_SUCCESS_MESSAGE} for {id}', response_serializer.data)
 
-            elif action == "suspend":
-                user.is_active = False
-                user.save()
-                response_serializer = self.serializer_class(user)
-                return api_response(status.HTTP_200_OK, f'{messages.USER_SUSPENDED_SUCCESS_MESSAGE} for {id}', response_serializer.data)
-
-
-        except Exception as ex:
-            raise ex
+        elif action == "suspend":
+            user.is_active = False
+            user.save()
+            response_serializer = self.serializer_class(user)
+            return api_response(status.HTTP_200_OK, f'{messages.USER_SUSPENDED_SUCCESS_MESSAGE} for {id}', response_serializer.data)
 
         
 # -----------------------------------------
@@ -248,89 +217,50 @@ class AdminCourseListCreateView(APIView):
     ]
     pagination_class = AdminUserPagination
 
-    @extend_schema(
-        tags=['Admin Course'],
-        summary="Get All Courses (Admin access only)",
-        description="Lists all courses with optional filters by title and is_paid.",
-        parameters=[
-            OpenApiParameter(
-                name="title",
-                location=OpenApiParameter.QUERY,
-                description="Name of the course to filter by (optional)",
-                required=False,
-                type=OpenApiTypes.STR
-            ),
-            OpenApiParameter(
-                name="is_paid",
-                location=OpenApiParameter.QUERY,
-                description="Filter by paid status, true or false (optional)",
-                required=False,
-                type=OpenApiTypes.BOOL
-            ),
-            OpenApiParameter(
-                name="page",
-                location=OpenApiParameter.QUERY,
-                description="Page number to retrieve data from",
-                required=False,
-                type=OpenApiTypes.INT
-            ),
-        ]
-    )
+    @extend_schema(**GET_ADMIN_COURSE_LIST_SCHEMA)
+
     def get(self, request, *args, **kwargs):
-        try:
-            # Retrieve query parameters for filtering
-            title = request.query_params.get('title')
-            is_paid = request.query_params.get('is_paid')
+        # Retrieve query parameters for filtering
+        title = request.query_params.get('title')
+        is_paid = request.query_params.get('is_paid')
 
-            queryset = get_all_courses(filter_title=title, filter_is_paid=is_paid)
+        queryset = get_all_courses(filter_title=title, filter_is_paid=is_paid)
 
-            paginator = self.pagination_class()
-            page = paginator.paginate_queryset(queryset, request)
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request)
 
-            serializer = self.serializer_class(page, many=True)
-            
-            if not queryset:
-                return api_response(status.HTTP_404_NOT_FOUND, messages.COURSE_NOT_FOUND_MESSAGE, serializer.data)
-            
-            if page is not None:
-                serializer = self.serializer_class(page, many=True)
-                response_data = {
-                    "count": paginator.page.paginator.count,
-                    "num_pages": paginator.page.paginator.num_pages,
-                    "current_page": paginator.page.number,
-                    "results": serializer.data,
-                }
-                return api_response(status.HTTP_200_OK, messages.COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE, response_data)
-
-            serializer = self.serializer_class(queryset, many=True)
-            
-            return api_response(status.HTTP_200_OK, messages.COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE, serializer.data)
-
-        except Exception as ex:
-            raise ex
-
-    @extend_schema(
-        tags=['Admin Course'],
-        summary="Create a New Course (Admin access only)",
-        description="Creates a new course by Admin User.",
-    )
-    def post(self, request, *args, **kwargs):
-        try:
-            result = create_course(request.data)
-
-            if "error" in result or "non_field_errors" in result:
-                return api_response(status.HTTP_400_BAD_REQUEST, "Error creating course", result)
-            
-            return api_response(status.HTTP_201_CREATED, 'Course created successfully', result)
-
-        except Exception as ex:
-            raise ex
-
-
-        if "error" in result or "non_field_errors" in result:
-            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.serializer_class(page, many=True)
         
-        return Response({'message': messages.COURSE_CREATED_SUCCESS_MESSAGE, 'data': result}, status=status.HTTP_201_CREATED)
+        if not queryset:
+            return api_response(status.HTTP_404_NOT_FOUND, messages.COURSE_NOT_FOUND_MESSAGE, serializer.data)
+        
+        if page is not None:
+            serializer = self.serializer_class(page, many=True)
+            response_data = {
+                "count": paginator.page.paginator.count,
+                "num_pages": paginator.page.paginator.num_pages,
+                "current_page": paginator.page.number,
+                "results": serializer.data,
+            }
+            return api_response(status.HTTP_200_OK, messages.COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE, response_data)
+
+        serializer = self.serializer_class(queryset, many=True)
+        
+        return api_response(status.HTTP_200_OK, messages.COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE, serializer.data)
+
+
+    @extend_schema(**POST_ADMIN_COURSE_CREATE_SCHEMA)
+    def post(self, request, *args, **kwargs):
+    # Create the course using provided data
+      result = create_course(request.data)
+
+    # Check for errors in the result
+      if "error" in result or "non_field_errors" in result:
+        return api_response(status.HTTP_400_BAD_REQUEST, messages.COURSE_CREATE_ERROR_MESSAGE, result)
+    
+    # Return success message
+      return api_response(status.HTTP_201_CREATED, messages.COURSE_CREATED_SUCCESS_MESSAGE, result)
+
 # -----------------------------------------
 
 # -----------------------------------------
@@ -343,43 +273,23 @@ class AdminCourseRetrieveUpdateView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUserRole]
     pagination_class = PageNumberPagination
 
-    @extend_schema(
-        tags=['Admin Course'],
-        summary="Retrieve Course by ID (Admin access only)",
-        parameters=[
-            OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="Course ID")
-        ]
-    )
+    @extend_schema(**GET_ADMIN_COURSE_RETRIEVE_SCHEMA)
     def get(self, request, id, *args, **kwargs):
         course_data = get_course_by_id(id)
         return api_response(status.HTTP_200_OK, messages.COURSE_RETRIEVED_SUCCESS_MESSAGE, course_data)
 
-    @extend_schema(
-        tags=['Admin Course'],
-        summary="Update course by ID (Can be accessed by user with admin role only)",
-        description="Updates the course by specific Id.",
-        parameters=[
-            OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="Course ID")
-        ],
-    )
+    @extend_schema(**UPDATE_ADMIN_COURSE_UPDATE_SCHEMA)
     def put(self, request, id=None, *args, **kwargs):
-        try:
-            result = update_course(id, request.data)
+    # Update the course using provided ID and data
+     result = update_course(id, request.data)
 
-            # Check for validation or non-field errors
-            if "error" in result or "non_field_errors" in result:
-                return api_response(status.HTTP_400_BAD_REQUEST, 'Bad request: ' + str(result))
+    # Check for validation or non-field errors
+     if "error" in result or "non_field_errors" in result:
+        return api_response(status.HTTP_400_BAD_REQUEST, messages.BAD_REQUEST_ERROR_MESSAGE + str(result))
 
-            return api_response(status.HTTP_200_OK, 'Course updated successfully', result)
+    # Return success message
+     return api_response(status.HTTP_200_OK, messages.COURSE_UPDATED_MESSAGE, result)
 
-        except Exception as ex:
-            # Catch any exception and return it with an appropriate error response
-            return api_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(ex))
-
-        if "error" in result or "non_field_errors" in result:
-            return Response(result, status=status.HTTP_400_BAD_REQUEST)
-        
-        return Response({'message': messages.COURSE_UPDATED_MESSAGE, 'data': result}, status=status.HTTP_200_OK)
 # -----------------------------------------
 
 

@@ -39,15 +39,22 @@ class RegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
-        # Generate the initial token
-        token = super().get_token(user)
+        try:
+            # Generate the initial token
+            token = super().get_token(user)
+            
+            # Add custom claims to the access token only
+            token['role'] = user.role  # Assuming `role` is a field on your User model
+            token['email'] = user.email
+            token['username'] = user.username
+            
+            return token
         
-        # Add custom claims to the access token only
-        token['role'] = user.role  # Assuming `role` is a field on your User model
-        token['email'] = user.email
-        token['username'] = user.username
-        
-        return token
+        except Exception as ex:
+            raise ValidationError({
+                "detail": "An error occurred during login.",
+                'error': str(ex)
+                })
     
     def validate(self, attrs):
         try:
@@ -77,12 +84,8 @@ class LoginSerializer(TokenObtainPairSerializer):
             raise ValidationError({"detail": str(e)})
         
         except Exception as ex:
-            # Log the exception and raise a generic error
-            print("---------------------------------")
-            print(str(ex))
-            print("---------------------------------")
-            
+            print(str(ex))          
             raise ValidationError({
-                "detail": "An error occurred during login.",
+                "detail": str(ex),
                 'error': str(ex)
                 })
