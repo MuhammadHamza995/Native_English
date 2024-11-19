@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     'nativo_english.api.shared.auth',
     'nativo_english.api.shared.user',
     'nativo_english.api.shared.course',
+
+    'nativo_english.db_scripts_automate',
 ]
 
 REST_FRAMEWORK = {
@@ -219,3 +221,4 @@ SECURE_SSL_REDIRECT = False
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
+BUILD_VERSION = 'ne-s2'
