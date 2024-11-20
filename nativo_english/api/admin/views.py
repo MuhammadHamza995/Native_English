@@ -19,7 +19,14 @@ from nativo_english.api.shared.utils import api_response, api_exception_handler
 from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id
 import json
 from django.contrib.auth.hashers import make_password
-
+from .models import Course, CourseImage
+from .serializer import CourseImageSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
+from nativo_english.api.shared.upload_engine import handle_file_upload
+from rest_framework.parsers import MultiPartParser, FormParser
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiRequestBody, OpenApiExample
 # -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
     page_size = 10  # Default number of items per page
@@ -380,6 +387,64 @@ class AdminCourseRetrieveUpdateView(APIView):
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
         
         return Response({'message': messages.COURSE_UPDATED_MESSAGE, 'data': result}, status=status.HTTP_200_OK)
+    
+# admin/views.py
+
+
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+from .models import CourseImage
+from .serializers import CourseImageSerializer
+
+class CourseImageView(APIView):
+    """
+    API View to handle course image upload and management.
+    """
+
+    @extend_schema(
+        request=CourseImageSerializer,
+        responses={
+            status.HTTP_200_OK: OpenApiResponse(
+                description="Course Image uploaded successfully",
+                content={'application/json': CourseImageSerializer}
+            ),
+            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+                description="Invalid input",
+                content={'application/json': {'type': 'object'}}
+            ),
+        },
+        parameters=[
+            OpenApiParameter('Authorization', description='Bearer token for authentication', required=True, type=str)
+        ]
+    )
+    def post(self, request, *args, **kwargs):
+        """
+        Handle image upload for a course.
+        """
+        serializer = CourseImageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        responses={
+            status.HTTP_200_OK: OpenApiResponse(
+                description="Course image list",
+                content={'application/json': CourseImageSerializer(many=True)}
+            ),
+        }
+    )
+    def get(self, request, *args, **kwargs):
+        """
+        Get a list of course images.
+        """
+        images = CourseImage.objects.all()
+        serializer = CourseImageSerializer(images, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 # -----------------------------------------
 
 

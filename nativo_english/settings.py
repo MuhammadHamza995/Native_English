@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    # 'drf_yasg',
+    'drf_yasg',
     'drf_spectacular',
     'drf_spectacular_sidecar',
     
@@ -222,3 +222,5 @@ SECURE_SSL_REDIRECT = False
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 BUILD_VERSION = 'ne-s2'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Directory where uploaded files will be stored
+MEDIA_URL = '/media/'  # URL to access the uploaded files
