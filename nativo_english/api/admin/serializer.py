@@ -17,4 +17,4 @@ class CourseImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CourseImage
-        fields = '__all__'
+        fields = ['id', 'name', 'image']

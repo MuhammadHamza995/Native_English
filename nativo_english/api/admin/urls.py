@@ -1,6 +1,6 @@
 from django.urls import path, include
 from .views import AdminUserListCreateView, AdminUserRetrieveUpdateView, AdminUserRoleUpdateView, AdminUserActivateSuspendUpdateView, AdminCourseListCreateView, AdminCourseRetrieveUpdateView
-from .views import UploadCourseImage
+from .views import CourseImageUploadView
 urlpatterns = [
     path('users/', AdminUserListCreateView.as_view(), name='user-create-list'),
     path('users/<int:id>/', AdminUserRetrieveUpdateView.as_view(), name='user-detail'),
@@ -12,5 +12,5 @@ urlpatterns = [
     path('course/', AdminCourseListCreateView.as_view(), name='course-create-list'),
     path('course/<int:id>/', AdminCourseRetrieveUpdateView.as_view(), name='course-detail'),
 
-    path('upload-course-image/<int:course_id>/', UploadCourseImage.as_view(), name='upload-course-image'),
+    path('upload-course-image/<int:course_id>/', CourseImageUploadView.as_view(), name='upload-course-image'),
 ]

@@ -19,14 +19,11 @@ from nativo_english.api.shared.utils import api_response, api_exception_handler
 from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id
 import json
 from django.contrib.auth.hashers import make_password
-from .models import Course, CourseImage
-from .serializer import CourseImageSerializer
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.exceptions import NotFound
-from nativo_english.api.shared.upload_engine import handle_file_upload
+from nativo_english.api.admin.serializer import CourseImageSerializer
+from nativo_english.api.admin.models import CourseImage
+from nativo_english.api.shared.course.models import Course  # Assuming the Course model exists
+from nativo_english.api.admin.permissions import IsAdminUserRole
 from rest_framework.parsers import MultiPartParser, FormParser
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiRequestBody, OpenApiExample
 # -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
     page_size = 10  # Default number of items per page
@@ -388,62 +385,45 @@ class AdminCourseRetrieveUpdateView(APIView):
         
         return Response({'message': messages.COURSE_UPDATED_MESSAGE, 'data': result}, status=status.HTTP_200_OK)
     
-# admin/views.py
+@extend_schema(
+    tags=['Admin'],
+    summary="Upload Course Image",
+    description="Upload an image for a specific course.",
+    responses={
+        status.HTTP_201_CREATED: OpenApiResponse(
+            description="Course image uploaded successfully",
+            response=CourseImageSerializer  # Serializer to describe the uploaded image data structure
+        ),
+        status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+            description="Bad request, invalid data"
+        ),
+    }
+)
+class CourseImageUploadView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUserRole]
+    parser_classes = [MultiPartParser, FormParser]  # To handle file uploads
 
-
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
-from .models import CourseImage
-from .serializers import CourseImageSerializer
-
-class CourseImageView(APIView):
-    """
-    API View to handle course image upload and management.
-    """
-
-    @extend_schema(
-        request=CourseImageSerializer,
-        responses={
-            status.HTTP_200_OK: OpenApiResponse(
-                description="Course Image uploaded successfully",
-                content={'application/json': CourseImageSerializer}
-            ),
-            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
-                description="Invalid input",
-                content={'application/json': {'type': 'object'}}
-            ),
-        },
-        parameters=[
-            OpenApiParameter('Authorization', description='Bearer token for authentication', required=True, type=str)
-        ]
-    )
     def post(self, request, *args, **kwargs):
-        """
-        Handle image upload for a course.
-        """
-        serializer = CourseImageSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Assuming the course_id is passed as part of the URL
+        course_id = kwargs.get('course_id')
 
-    @extend_schema(
-        responses={
-            status.HTTP_200_OK: OpenApiResponse(
-                description="Course image list",
-                content={'application/json': CourseImageSerializer(many=True)}
-            ),
-        }
-    )
-    def get(self, request, *args, **kwargs):
-        """
-        Get a list of course images.
-        """
-        images = CourseImage.objects.all()
-        serializer = CourseImageSerializer(images, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Fetch the course or return 404 if not found
+        course = get_object_or_404(Course, id=course_id)
+
+        # Check if the image file is provided in the request
+        image = request.FILES.get('image')
+        if not image:
+            return Response({"detail": "No image provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Assuming the Course model has an image field for the course image
+        course.image = image  # Assign the uploaded image to the course image field
+        course.save()
+
+        # Serialize the updated course data (including the image field)
+        serializer = CourseImageSerializer(course)
+
+        # Return the serialized data with a 201 CREATED status
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 # -----------------------------------------
 
