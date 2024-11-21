@@ -1,29 +1,24 @@
 # api/admin/views.py
 from nativo_english.api.shared import messages
-
-# api/admin/views.py
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiRequest, OpenApiResponse
 from drf_spectacular.types import OpenApiTypes
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
-from .serializer import AdminUserSerializer
-from nativo_english.api.shared.course.serializer import CourseSerializer
-from nativo_english.api.shared.user.models import User
-from .permissions import IsAdminUserRole
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from nativo_english.api.shared.utils import api_response, api_exception_handler
 from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id
 import json
 from django.contrib.auth.hashers import make_password
-from nativo_english.api.admin.serializer import CourseImageSerializer
+from nativo_english.api.admin.serializer import AdminUserSerializer, CourseImageSerializer
 from nativo_english.api.admin.models import CourseImage
-from nativo_english.api.shared.course.models import Course  # Assuming the Course model exists
+from nativo_english.api.shared.course.models import Course
 from nativo_english.api.admin.permissions import IsAdminUserRole
 from rest_framework.parsers import MultiPartParser, FormParser
+from nativo_english.api.shared.course.serializer import CourseSerializer
+
 # -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
     page_size = 10  # Default number of items per page
@@ -385,45 +380,70 @@ class AdminCourseRetrieveUpdateView(APIView):
         
         return Response({'message': messages.COURSE_UPDATED_MESSAGE, 'data': result}, status=status.HTTP_200_OK)
     
+
+
+        # If an image file is provided, save it
+        if image:
+            # Assuming the CourseImage model has a field to store the image
+            course_image = CourseImage(course=course, image=image)
+            course_image.save()
+            return Response(CourseImageSerializer(course_image).data, status=status.HTTP_201_CREATED)
+
+        # If an image URL is provided, process it (you might want to save it to the model)
+        if image_url:
+            # Assuming the CourseImage model has a field to store the image URL
+            course_image = CourseImage(course=course, image_url=image_url)
+            course_image.save()
+            return Response(CourseImageSerializer(course_image).data, status=status.HTTP_201_CREATED)
+
 @extend_schema(
     tags=['Admin'],
     summary="Upload Course Image",
     description="Upload an image for a specific course.",
     responses={
-        status.HTTP_201_CREATED: OpenApiResponse(
+        201: OpenApiResponse(
             description="Course image uploaded successfully",
-            response=CourseImageSerializer  # Serializer to describe the uploaded image data structure
+            response=CourseImageSerializer
         ),
-        status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+        400: OpenApiResponse(
             description="Bad request, invalid data"
         ),
-    }
+    },
+    parameters=[
+        OpenApiParameter(
+            name='course_id', 
+            type=int, 
+            location='path',  # Corrected to string 'path'
+            required=True, 
+            description='The ID of the course'
+        ),
+        OpenApiParameter(
+            name='image', 
+            type=OpenApiTypes.OBJECT, 
+            location='form',  # Corrected to string 'form'
+            required=True, 
+            description='The image to upload'
+        ),
+    ]
 )
 class CourseImageUploadView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUserRole]
-    parser_classes = [MultiPartParser, FormParser]  # To handle file uploads
+    parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, *args, **kwargs):
-        # Assuming the course_id is passed as part of the URL
         course_id = kwargs.get('course_id')
-
-        # Fetch the course or return 404 if not found
         course = get_object_or_404(Course, id=course_id)
 
-        # Check if the image file is provided in the request
         image = request.FILES.get('image')
         if not image:
             return Response({"detail": "No image provided."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Assuming the Course model has an image field for the course image
-        course.image = image  # Assign the uploaded image to the course image field
+        course.image = image
         course.save()
 
-        # Serialize the updated course data (including the image field)
         serializer = CourseImageSerializer(course)
-
-        # Return the serialized data with a 201 CREATED status
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 # -----------------------------------------
 
