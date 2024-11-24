@@ -6,7 +6,7 @@ USER_RETRIEVED_SUCCESS_MESSAGE = 'User retrieved successfully'
 USERS_LIST_RETRIEVED_SUCCESS_MESSAGE = 'Users list retrieved successfully'
 USER_SUSPENDED_SUCCESS_MESSAGE = 'User suspended successfully'
 NO_USER_ROLE_PROVIDED = 'No user role provided'
-# Error messages
+
 BAD_REQUEST_ERROR_MESSAGE = 'Bad request'
 UNAUTHORIZED_ERROR_MESSAGE = 'Unauthorized access'
 NOT_FOUND_ERROR_MESSAGE = 'Resource not found'
@@ -14,8 +14,12 @@ INTERNAL_SERVER_ERROR_MESSAGE = 'Internal server error'
 VALIDATION_ERROR_MESSAGE = 'Validation error'
 
 PERMISSION_DENIED_MESSAGE = "You do not have permission to perform this action."
+INVALID_ACTION_MESSAGE = "Invalid action. Must be 'activate' or 'suspend'."
+
 COURSE_UPDATED_MESSAGE = 'Course updated successfully'
 COURSE_RETRIEVED_SUCCESS_MESSAGE = 'Course retrieved successfully'
 COURSE_CREATED_SUCCESS_MESSAGE = 'Course created successfully'
 COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE = 'Course List Retrieved Successfully'
 COURSE_NOT_FOUND_MESSAGE = 'Course Not Found'
+COURSE_CREATE_ERROR_MESSAGE = 'Error creating course'
+
