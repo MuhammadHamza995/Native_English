@@ -68,21 +68,7 @@ POST_USER_SCHEMA = {
     'tags': ['Admin'],
     'summary': 'Creates a new User (Can be accessed by user with admin role only)',
     'description': 'Creates a new user by Admin User.',
-    'request': {
-        'content': {
-            'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'username': {'type': 'string', 'description': 'The username of the user.'},
-                        'email': {'type': 'string', 'description': 'The email address of the user.'},
-                        'password': {'type': 'string', 'format': 'password', 'description': 'The user\'s password.'},
-                    },
-                    'required': ['username', 'email', 'password'],
-                },
-            },
-        },
-    },
+    
     'responses': {
         201: OpenApiResponse(
             description='User created successfully.',
@@ -162,21 +148,7 @@ UPDATE_USER_BY_ID_SCHEMA = {
             type=OpenApiTypes.INT,
         ),
     ],
-    'request': {  # Corrected from 'requestBody' to 'request'
-        'content': {
-            'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'username': {'type': 'string', 'example': 'new_username'},
-                        'email': {'type': 'string', 'example': 'new_email@example.com'},
-                        'is_active': {'type': 'boolean', 'example': True},
-                    },
-                    'required': ['username', 'email'],
-                },
-            },
-        },
-    },
+    
     'responses': {
         200: OpenApiResponse(
             description='User updated successfully',
@@ -209,16 +181,7 @@ UPDATE_USER_ROLE_SCHEMA = {
             type=OpenApiTypes.INT,
         ),
     ],
-    'request': OpenApiResponse(
-        description='Request body containing role to update',
-        response={
-            'type': 'object',
-            'properties': {
-                'role': {'type': 'string', 'example': 'Editor'},
-            },
-            'required': ['role'],
-        }
-    ),
+    
     'responses': {
         200: OpenApiResponse(
             description='Successful response when the user role is updated',
@@ -446,19 +409,7 @@ UPDATE_ADMIN_COURSE_UPDATE_SCHEMA = {
             type=OpenApiTypes.INT,  # Specify the type as INT
         ),
     ],
-    'request': {
-        'application/json': {
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'title': {'type': 'string', 'description': 'Course title'},
-                    'is_paid': {'type': 'boolean', 'description': 'Paid status of the course'},
-                    'description': {'type': 'string', 'description': 'Course description'},
-                },
-                'required': ['title', 'is_paid', 'description'],  # Required fields
-            },
-        },
-    },
+    
     'responses': {
         200: OpenApiResponse(
             description='Course successfully updated',
