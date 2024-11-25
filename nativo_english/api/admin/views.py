@@ -211,7 +211,7 @@ class AdminUserActivateSuspendUpdateView(APIView):
     def post(self, request, id=None, action=None, *arg, **kwargs):
         try:
             if action not in ['activate', 'suspend']:
-                return api_response(status.HTTP_400_BAD_REQUEST, "Invalid action. Must be 'activate' or 'suspend'.")
+                return api_response(status.HTTP_400_BAD_REQUEST,messages.INVALID_ACTIONS_MESSAGE)
 
             user = get_object_or_404(User, id=id)
             
@@ -318,18 +318,14 @@ class AdminCourseListCreateView(APIView):
             result = create_course(request.data)
 
             if "error" in result or "non_field_errors" in result:
-                return api_response(status.HTTP_400_BAD_REQUEST, "Error creating course", result)
+                return api_response(status.HTTP_400_BAD_REQUEST, messages.COURSE_CREATING_ERROR_MESSAGE, result)
             
-            return api_response(status.HTTP_201_CREATED, 'Course created successfully', result)
+            return api_response(status.HTTP_201_CREATED, messages.COURSE_CREATED_SUCCESS_MESSAGE, result)
 
         except Exception as ex:
             raise ex
 
 
-        if "error" in result or "non_field_errors" in result:
-            return Response(result, status=status.HTTP_400_BAD_REQUEST)
-        
-        return Response({'message': messages.COURSE_CREATED_SUCCESS_MESSAGE, 'data': result}, status=status.HTTP_201_CREATED)
 # -----------------------------------------
 
 # -----------------------------------------
@@ -367,82 +363,89 @@ class AdminCourseRetrieveUpdateView(APIView):
 
             # Check for validation or non-field errors
             if "error" in result or "non_field_errors" in result:
-                return api_response(status.HTTP_400_BAD_REQUEST, 'Bad request: ' + str(result))
+                return api_response(status.HTTP_400_BAD_REQUEST, messages.BAD_REQUEST_ERROR_MESSAGE + str(result))
 
-            return api_response(status.HTTP_200_OK, 'Course updated successfully', result)
+            return api_response(status.HTTP_200_OK, f'{messages.COURSE_UPDATED_MESSAGE}:', result)
 
         except Exception as ex:
             # Catch any exception and return it with an appropriate error response
             return api_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(ex))
-
-        if "error" in result or "non_field_errors" in result:
-            return Response(result, status=status.HTTP_400_BAD_REQUEST)
-        
-        return Response({'message': messages.COURSE_UPDATED_MESSAGE, 'data': result}, status=status.HTTP_200_OK)
-    
-
-
-        # If an image file is provided, save it
-        if image:
-            # Assuming the CourseImage model has a field to store the image
-            course_image = CourseImage(course=course, image=image)
-            course_image.save()
-            return Response(CourseImageSerializer(course_image).data, status=status.HTTP_201_CREATED)
-
-        # If an image URL is provided, process it (you might want to save it to the model)
-        if image_url:
-            # Assuming the CourseImage model has a field to store the image URL
-            course_image = CourseImage(course=course, image_url=image_url)
-            course_image.save()
-            return Response(CourseImageSerializer(course_image).data, status=status.HTTP_201_CREATED)
-
-@extend_schema(
-    tags=['Admin'],
-    summary="Upload Course Image",
-    description="Upload an image for a specific course.",
-    responses={
-        201: OpenApiResponse(
-            description="Course image uploaded successfully",
-            response=CourseImageSerializer
-        ),
-        400: OpenApiResponse(
-            description="Bad request, invalid data"
-        ),
-    },
-    parameters=[
-        OpenApiParameter(
-            name='course_id', 
-            type=int, 
-            location='path',  # Corrected to string 'path'
-            required=True, 
-            description='The ID of the course'
-        ),
-        OpenApiParameter(
-            name='image', 
-            type=OpenApiTypes.OBJECT, 
-            location='form',  # Corrected to string 'form'
-            required=True, 
-            description='The image to upload'
-        ),
-    ]
-)
+                        
 class CourseImageUploadView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUserRole]
     parser_classes = [MultiPartParser, FormParser]
+    serializer_class = CourseImageSerializer 
 
+    @extend_schema(
+        tags = ['Admin'],
+        summary = 'Upload Course Image (by admin role only)',
+        operation_id="upload_course_image",
+        description="Upload an image file for a specific course by providing the course ID and image.",
+        responses={
+            201: OpenApiResponse(
+                description="Image uploaded successfully.",
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'status': {'type': 'integer', 'example': 201},
+                        'message': {'type': 'string', 'example': 'Image uploaded successfully.'},
+                        'data': {
+                            'type': 'object',
+                            'properties': {
+                                'id': {'type': 'integer', 'example': 42},
+                                'image_url': {'type': 'string', 'description': 'URL of the uploaded image.'}
+                            }
+                        }
+                    }
+                }
+            ),
+            400: OpenApiResponse(
+                description="Bad request. Errors in image upload.",
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'status': {'type': 'integer', 'example': 400},
+                        'message': {'type': 'string', 'example': 'Invalid input or file format.'},
+                        'errors': {'type': 'object'}
+                    }
+                }
+            )
+        }
+    )
     def post(self, request, *args, **kwargs):
-        course_id = kwargs.get('course_id')
-        course = get_object_or_404(Course, id=course_id)
+        try:
+            # Validate incoming data
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                # Extract validated data
+                course_id = serializer.validated_data.get('course_id')
+                image = serializer.validated_data.get('image')
 
-        image = request.FILES.get('image')
-        if not image:
-            return Response({"detail": "No image provided."}, status=status.HTTP_400_BAD_REQUEST)
+                # Check if the course exists
+                course = get_object_or_404(Course, id=course_id)
+                course.image = image
+                course.save()
 
-        course.image = image
-        course.save()
-
-        serializer = CourseImageSerializer(course)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+                # Return the response using the serializer
+                response_serializer = self.serializer_class(course)
+                return Response(
+                    {
+                        'status': status.HTTP_201_CREATED,
+                        'message': messages.IMAGE_UPLOAD_SUCCESS_MESSAGE ,
+                        'data': response_serializer.data
+                    },
+                    status=status.HTTP_201_CREATED
+                )
+            return Response(
+                {
+                    'status': status.HTTP_400_BAD_REQUEST,
+                    'message': messages.INVALID_FILE_OR_INPUT,
+                    'errors': serializer.errors
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as ex:
+            return api_exception_handler(ex)
 
 
 # -----------------------------------------

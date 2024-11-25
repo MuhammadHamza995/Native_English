@@ -12,6 +12,7 @@ UNAUTHORIZED_ERROR_MESSAGE = 'Unauthorized access'
 NOT_FOUND_ERROR_MESSAGE = 'Resource not found'
 INTERNAL_SERVER_ERROR_MESSAGE = 'Internal server error'
 VALIDATION_ERROR_MESSAGE = 'Validation error'
+INVALID_ACTIONS_MESSAGE = "Invalid action. Must be 'activate' or 'suspend'."
 
 PERMISSION_DENIED_MESSAGE = "You do not have permission to perform this action."
 COURSE_UPDATED_MESSAGE = 'Course updated successfully'
@@ -19,3 +20,7 @@ COURSE_RETRIEVED_SUCCESS_MESSAGE = 'Course retrieved successfully'
 COURSE_CREATED_SUCCESS_MESSAGE = 'Course created successfully'
 COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE = 'Course List Retrieved Successfully'
 COURSE_NOT_FOUND_MESSAGE = 'Course Not Found'
+COURSE_CREATING_ERROR_MESSAGE = 'Error creating course'
+
+IMAGE_UPLOAD_SUCCESS_MESSAGE = 'Image uploaded successfully'
+INVALID_FILE_OR_INPUT = 'Invalid input or file format'
