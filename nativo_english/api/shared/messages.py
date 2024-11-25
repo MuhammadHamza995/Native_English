@@ -21,6 +21,8 @@ COURSE_CREATED_SUCCESS_MESSAGE = 'Course created successfully'
 COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE = 'Course List Retrieved Successfully'
 COURSE_NOT_FOUND_MESSAGE = 'Course Not Found'
 COURSE_CREATING_ERROR_MESSAGE = 'Error creating course'
+REQUIRED_COURSE_ID_PARAMETER_MESSAGE = 'course_id is required as a query parameter.'
 
 IMAGE_UPLOAD_SUCCESS_MESSAGE = 'Image uploaded successfully'
 INVALID_FILE_OR_INPUT = 'Invalid input or file format'
+ERROR = 'An error occured'

@@ -18,6 +18,7 @@ from nativo_english.api.shared.course.models import Course
 from nativo_english.api.admin.permissions import IsAdminUserRole
 from rest_framework.parsers import MultiPartParser, FormParser
 from nativo_english.api.shared.course.serializer import CourseSerializer
+from nativo_english.api.shared.upload_engine import handle_file_upload
 
 # -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
@@ -374,13 +375,13 @@ class AdminCourseRetrieveUpdateView(APIView):
 class CourseImageUploadView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUserRole]
     parser_classes = [MultiPartParser, FormParser]
-    serializer_class = CourseImageSerializer 
+    serializer_class = CourseImageSerializer
 
     @extend_schema(
         tags = ['Admin'],
         summary = 'Upload Course Image (by admin role only)',
         operation_id="upload_course_image",
-        description="Upload an image file for a specific course by providing the course ID and image.",
+        description="Upload an image file for a specific course by providing the course ID as a query parameter and the image in the request body.",
         responses={
             201: OpenApiResponse(
                 description="Image uploaded successfully.",
@@ -414,24 +415,31 @@ class CourseImageUploadView(APIView):
     )
     def post(self, request, *args, **kwargs):
         try:
-            # Validate incoming data
+            # Extract the course_id from query parameters
+            course_id = request.query_params.get('course_id')
+            if not course_id:
+                return Response(
+                    {'detail': messages.REQUIRED_COURSE_ID_PARAMETER_MESSAGE},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Check if the course exists
+            course = get_object_or_404(Course, id=course_id)
+
+            # Validate incoming data using the serializer
             serializer = self.serializer_class(data=request.data)
             if serializer.is_valid():
-                # Extract validated data
-                course_id = serializer.validated_data.get('course_id')
+                # Extract validated image
                 image = serializer.validated_data.get('image')
-
-                # Check if the course exists
-                course = get_object_or_404(Course, id=course_id)
                 course.image = image
                 course.save()
 
-                # Return the response using the serializer
+                # Serialize the updated course data
                 response_serializer = self.serializer_class(course)
                 return Response(
                     {
                         'status': status.HTTP_201_CREATED,
-                        'message': messages.IMAGE_UPLOAD_SUCCESS_MESSAGE ,
+                        'message': messages.IMAGE_UPLOAD_SUCCESS_MESSAGE,
                         'data': response_serializer.data
                     },
                     status=status.HTTP_201_CREATED
@@ -445,7 +453,14 @@ class CourseImageUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as ex:
-            return api_exception_handler(ex)
+            return Response(
+                {
+                    'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    'message': messages.ERROR,
+                    'detail': str(ex),
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 # -----------------------------------------
