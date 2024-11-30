@@ -1,6 +1,6 @@
 /*****************************************************
 Author: Muhammad Hassaan Bashir
-Ticket: 
+Ticket: https://app.clickup.com/t/868axzz4x
 Description: This function will return user detail by Id
 
 Params: user_id

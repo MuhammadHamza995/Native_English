@@ -14,6 +14,9 @@ class AdminUserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True},  # Hide password from output
         }
+    def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data['password'])
+        return super().create(validated_data)
 
     # def create(self, validated_data):
     #     # Apply password hashing
