@@ -325,19 +325,19 @@ POST_ADMIN_COURSE_CREATE_SCHEMA = {
     'summary': 'Create a New Course (Admin access only)',
     'operation_id': 'create_new_course_by_admin',
     'description': 'Creates a new course by an Admin User. Requires course title, description, and paid status.',
-    'request': {
-        'application/json': {
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'title': {'type': 'string', 'description': 'Title of the course (required, max 100 characters)'},
-                    'is_paid': {'type': 'boolean', 'description': 'Whether the course is paid or free (required)'},
-                    'description': {'type': 'string', 'description': 'Detailed description of the course'},
-                },
-                'required': ['title', 'is_paid'],
-            }
-        }
-    },
+    # 'request': {
+    #     'application/json': {
+    #         'schema': {
+    #             'type': 'object',
+    #             'properties': {
+    #                 'title': {'type': 'string', 'description': 'Title of the course (required, max 100 characters)'},
+    #                 'is_paid': {'type': 'boolean', 'description': 'Whether the course is paid or free (required)'},
+    #                 'description': {'type': 'string', 'description': 'Detailed description of the course'},
+    #             },
+    #             'required': ['title', 'is_paid'],
+    #         }
+    #     }
+    # },
     'responses': {
         201: OpenApiResponse(
             description='Course successfully created',
@@ -475,22 +475,138 @@ GET_ADMIN_COURSE_ALL_SECTION_SCHEMA = {
 
 POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA = {
     'tags': ['AdminCourseSection'],
-    'summary': 'Creates a new course section (Can be accessed by user with admin role only)',
+    'summary': 'Creates a new course section (Admin access only)',
     'operation_id': 'create_new_course_section',
-    'description': 'Creates a new course section by Admin User.',
-}
+    'description': 'Allows an admin user to create a new course section.',
+    # 'request': {
+    #     'application/json': {
+    #         'example': {
+    #             'title': 'New Section Title',
+    #             'course_id': 101,
+    #             'description': 'Description of the new course section.',
+    #         }
+    #     }
+    # },
+    'responses': {
+    201: OpenApiResponse(
+        description='Course Section Created Successfully',
+        response={
+            'application/json': {
+                'status': {'type': 'integer', 'example': 200},
+                'message': {'type': 'string', 'example': 'Course section created successfully.'},
+                'data': {
+                    'id': {'type': 'integer', 'example': 1},
+                    'title': {'type': 'string', 'example': 'New Section Title'},
+                    'course_id': {'type': 'integer', 'example': 101},
+                    'description': {'type': 'string', 'example': 'Description of the new course section.'},
+                }
+            }
+        }
+    ),
+    400: OpenApiResponse(
+        description='Bad Request - Validation Errors or Issues Creating Course Section',
+        response={
+            'application/json': {
+                'status': {'type': 'integer', 'example': 400},
+                'message': {'type': 'string', 'example': 'Validation error occurred.'},
+                'errors': {
+                    'title': {'type': 'array', 'items': {'type': 'string'}, 'example': ['This field is required.']},
+                    'course_id': {'type': 'array', 'items': {'type': 'string'}, 'example': ['Invalid ID provided.']},
+                }
+            }
+        }
+    ),
+},}
+
 
 GET_ADMIN_COURSE_SECTION_DETAIL_BY_ID_SCHEMA = {
     'tags': ['AdminCourseSection'],
     'summary': "Retrieve Course Section by ID (Admin access only)",
-    'operation_id': 'get_course_section_detail_by_id'
+    'operation_id': 'get_course_section_detail_by_id',
+    'responses': {
+        200: OpenApiResponse(
+            description="Course Section Retrieved Successfully",
+            response={
+                'application/json': {
+                    'status': {'type': 'integer', 'example': 200},
+                    'message': {'type': 'string', 'example': 'Course Section Retrieved Successfully'},
+                    'data': {
+                        'id': {'type': 'integer', 'example': 1},
+                        'title': {'type': 'string', 'example': 'Introduction to Python'},
+                        'course_id': {'type': 'integer', 'example': 101},
+                        'description': {'type': 'string', 'example': 'This is the introductory section of the Python course.'},
+                    }
+                }
+            }
+        ),
+        404: OpenApiResponse(
+            description="Course Section Not Found",
+            response={
+                'application/json': {
+                    'status': {'type': 'integer', 'example': 404},
+                    'message': {'type': 'string', 'example': 'Course section not found'},
+                }
+            }
+        ),
+    }
 }
+
 
 UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA = {
     'tags': ['AdminCourseSection'],
     'summary': "Update Course Section by ID (Admin access only)",
-    'operation_id': 'update_course_section_detail_by_id'
+    'operation_id': 'update_course_section_by_id',
+    'description': 'Allows an admin user to update details of a course section by its ID.',
+    # 'request': {
+    #     'application/json': {
+    #         'example': {
+    #             'title': 'Updated Section Title',
+    #             'course_id': 101,
+    #             'description': 'Updated section description.',
+    #         }
+    #     }
+    # },
+    'responses': {
+        200: OpenApiResponse(
+            description="Course Section Updated Successfully",
+            response={
+                'application/json': {
+                    'status': {'type': 'integer', 'example': 200},
+                    'message': {'type': 'string', 'example': 'Course section updated successfully.'},
+                    'data': {
+                        'id': {'type': 'integer', 'example': 1},
+                        'title': {'type': 'string', 'example': 'Updated Section Title'},
+                        'course_id': {'type': 'integer', 'example': 101},
+                        'description': {'type': 'string', 'example': 'Updated section description.'},
+                    }
+                }
+            }
+        ),
+        400: OpenApiResponse(
+            description="Bad Request - Validation Errors",
+            response={
+                'application/json': {
+                    'status': {'type': 'integer', 'example': 400},
+                    'message': {'type': 'string', 'example': 'Validation Error'},
+                    'errors': {
+                        'title': {'type': 'array', 'items': {'type': 'string'}, 'example': ['This field is required.']},
+                        'course_id': {'type': 'array', 'items': {'type': 'string'}, 'example': ['Invalid ID provided.']},
+                    }
+                }
+            }
+        ),
+        404: OpenApiResponse(
+            description="Course Section Not Found",
+            response={
+                'application/json': {
+                    'status': {'type': 'integer', 'example': 404},
+                    'message': {'type': 'string', 'example': 'Course section with the given ID does not exist.'}
+                }
+            }
+        )
+    }
 }
+
 # --------------------------------------------
 
 
@@ -572,11 +688,51 @@ GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA = {
     },
 }
 
+
 POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA = {
     'tags': ['AdminCourseLesson'],
     'summary': 'Creates a new course lesson (Can be accessed by user with admin role only)',
     'operation_id': 'create_course_lesson',
     'description': 'Creates a new course lesson by Admin User.',
+    'responses': {
+        201: OpenApiResponse(
+            description="Course Lesson Created Successfully",
+            response={
+                'application/json': {
+                    'status': {'type': 'integer', 'example': 201},
+                    'message': {'type': 'string', 'example': "Course Lesson Created Successfully"},
+                    'data': {
+                        'id': {'type': 'integer', 'example': 1},
+                        'title': {'type': 'string', 'example': 'Lesson Title'},
+                        'course_section_id': {'type': 'integer', 'example': 42},
+                        'content': {'type': 'string', 'example': 'Lesson Content Description'},
+                    }
+                }
+            }
+        ),
+        400: OpenApiResponse(
+            description="Bad Request - Validation Errors",
+            response={
+                'application/json': {
+                    'status': {'type': 'integer', 'example': 400},
+                    'message': {'type': 'string', 'example': "Validation Error"},
+                    'errors': {
+                        'title': {'type': 'array', 'items': {'type': 'string'}, 'example': ['This field is required.']},
+                        'course_section_id': {'type': 'array', 'items': {'type': 'string'}, 'example': ['Invalid ID provided.']},
+                    }
+                }
+            }
+        ),
+        401: OpenApiResponse(
+            description="Unauthorized Access - Admin Role Required",
+            response={
+                'application/json': {
+                    'status': {'type': 'integer', 'example': 401},
+                    'message': {'type': 'string', 'example': "You are not authorized to perform this action."}
+                }
+            }
+        ),
+    }
 }
 
 UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA = {

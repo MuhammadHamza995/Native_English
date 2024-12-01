@@ -328,15 +328,27 @@ class AdminCourseSectionListCreateView(APIView):
 
         return api_response(status.HTTP_200_OK, messages.SECTION_LIST_RETRIEVED_SUCCESS_MESSAGE, sections)
 
-    @extend_schema(**POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA)
-    def post(self, request, *args, **kwargs):
+  
+class AdminCourseSectionCreateView(APIView):
+     @extend_schema(**POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA)
+     def post(self, request, *args, **kwargs):
+        # Attempt to create the course section
         result = create_course_section(request.data)
-        if isinstance(result, dict):
-            if 'errors' in result:
-                return api_response(status.HTTP_400_BAD_REQUEST, messages.SECTION_CREATION_ERROR_MESSAGE, result['errors'])
-        
-        return api_response(status.HTTP_201_CREATED, messages.COURSE_SECTION_CREATED_SUCCESS_MESSAGE, result)
-# -----------------------------------------
+
+        # Handle error response
+        if isinstance(result, dict) and 'errors' in result:
+            return api_response(
+                status.HTTP_400_BAD_REQUEST,
+                messages.SECTION_CREATION_ERROR_MESSAGE,
+                {'errors': result['errors']}
+            )
+
+        # Return success response
+        return api_response(
+            status.HTTP_201_CREATED,
+            messages.COURSE_SECTION_CREATED_SUCCESS_MESSAGE,
+            result
+        )
 
 # -----------------------------------------
 # This view corresponds to following endpoints
@@ -355,12 +367,23 @@ class AdminCourseSectionRetrieveUpdateView(APIView):
 
     @extend_schema(**UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA)
     def put(self, request, course_section_id=None, *args, **kwargs):
+        # Perform the update operation
         result = update_course_section(course_section_id, request.data)
 
+        # Handle validation or update errors
         if "error" in result or "non_field_errors" in result:
-            return api_response(status.HTTP_400_BAD_REQUEST, messages.BAD_REQUEST_ERROR_MESSAGE, result)
-        
-        return api_response(status.HTTP_200_OK, messages.COURSE_SECTION_UPDATED_SUCCESS_MESSAGE, result)
+            return api_response(
+                status.HTTP_400_BAD_REQUEST,
+                messages.sBAD_REQUEST_ERROR_MESSAGE,
+                result
+            )
+
+        # Return a successful response
+        return api_response(
+            status.HTTP_200_OK,
+            messages.COURSE_SECTION_UPDATED_SUCCESS_MESSAGE,
+            result
+        )
 # -----------------------------------------
 
 # -----------------------------------------
