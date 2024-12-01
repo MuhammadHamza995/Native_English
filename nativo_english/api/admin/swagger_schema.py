@@ -431,3 +431,93 @@ UPDATE_ADMIN_COURSE_UPDATE_SCHEMA = {
     },
 }
 
+
+GET_COURSE_LESSON_CONTENT_SCHEMA = {
+    'tags': ["Admin"],
+    'summary': 'Retrieve Course Lesson Content by ID',
+    'description': 'Fetches the details of a course lesson content by its ID.',
+    'parameters': [
+        OpenApiParameter(
+            name="course_lesson_id",
+            location=OpenApiParameter.PATH,
+            description="The ID of the course lesson content",
+            required=True,
+            type=OpenApiTypes.INT,
+        ),
+    ],
+    'responses': {
+        200: OpenApiResponse(
+            description='Course Lesson Content successfully retrieved',
+            response={
+                'type': 'object',
+                'properties': {
+                    'status': {'type': 'integer', 'example': 200},
+                    'data': {
+                        'type': 'object',
+                        'properties': {
+                            'id': {'type': 'integer', 'example': 1},
+                            'title': {'type': 'string', 'example': 'Introduction to Python'},
+                            'content': {'type': 'string', 'example': 'Detailed lesson content here.'},
+                            'created_at': {'type': 'string', 'format': 'date-time', 'example': '2024-01-01T10:00:00Z'},
+                        },
+                    },
+                },
+            },
+        ),
+        404: OpenApiResponse(
+            description='Course Lesson Content not found',
+            response={
+                'type': 'object',
+                'properties': {
+                    'status': {'type': 'integer', 'example': 404},
+                    'message': {'type': 'string', 'example': 'Course Lesson Content not found'},
+                },
+            },
+        ),
+    },
+}
+
+UPDATE_COURSE_LESSON_CONTENT_SCHEMA = {
+    "tags": ["Admin"],
+    "summary": "Update Course Lesson Content by ID",
+    "description": "Updates the course lesson content with new details by ID.",
+    "request": {
+        "application/json": {
+            "example": {
+                "title": "Updated Title",
+                "content": "Updated content goes here",
+            }
+        }
+    },
+    "responses": {
+        200: {
+            "description": "Course Lesson Content updated successfully",
+            "examples": {
+                "application/json": {
+                    "status": 200,
+                    "message": "Course Lesson Content updated successfully",
+                }
+            },
+        },
+        404: {
+            "description": "Course Lesson Content not found",
+            "examples": {
+                "application/json": {
+                    "status": 404,
+                    "message": "Course Lesson Content not found",
+                }
+            },
+        },
+        400: {
+            "description": "Validation errors occurred",
+            "examples": {
+                "application/json": {
+                    "status": 400,
+                    "errors": {
+                        "title": ["This field is required."],
+                    },
+                }
+            },
+        },
+    },
+}

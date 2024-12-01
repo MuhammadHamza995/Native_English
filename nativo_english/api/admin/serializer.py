@@ -17,6 +17,21 @@ class AdminUserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data['password'])
         return super().create(validated_data)
+    
+class CourseLessonContentSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField(max_length=255)
+    content = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+    def update(self, instance, validated_data):
+        """
+        Update the CourseLessonContent object with validated data.
+        """
+        instance['title'] = validated_data.get('title', instance['title'])
+        instance['content'] = validated_data.get('content', instance['content'])
+        # Simulate a database save (if this were an ORM object, you'd call save() here)
+        return instance
 
     # def create(self, validated_data):
     #     # Apply password hashing

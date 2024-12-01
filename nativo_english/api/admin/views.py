@@ -11,23 +11,21 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
-from .serializer import AdminUserSerializer
-from nativo_english.api.shared.course.serializer import CourseSerializer, CourseSectionSerializer, CourseLessonSerializer
-from .serializer import AdminUserSerializer
+from .serializer import AdminUserSerializer,CourseLessonContentSerializer
 from nativo_english.api.shared.course.serializer import CourseSerializer, CourseSectionSerializer, CourseLessonSerializer
 from nativo_english.api.shared.user.models import User
 from .permissions import IsAdminUserRole
 from django.shortcuts import get_object_or_404
-from nativo_english.api.shared.utils import api_response, api_exception_handler
+from nativo_english.api.shared.utils import api_response, api_exception_handler,get_course_lesson_content_by_id
 from rest_framework.exceptions import NotFound
 from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id, get_all_course_sections, get_course_section_by_id, update_course_section, create_course_section, create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson
 from nativo_english.api.shared.utils import api_response, api_exception_handler
 from rest_framework.exceptions import NotFound
 from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id, get_all_course_sections, get_course_section_by_id, update_course_section, create_course_section, create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson
 import json
+from .models import CourseLessonContent
 from django.contrib.auth.hashers import make_password
-from .swagger_schema import GET_USER_LIST_SCHEMA, POST_USER_SCHEMA , GET_USER_BY_ID_SCHEMA , UPDATE_USER_BY_ID_SCHEMA, UPDATE_USER_ROLE_SCHEMA, UPDATE_USER_STATUS_SCHEMA, GET_ADMIN_COURSE_LIST_SCHEMA, POST_ADMIN_COURSE_CREATE_SCHEMA, GET_ADMIN_COURSE_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_UPDATE_SCHEMA
-
+from .swagger_schema import GET_USER_LIST_SCHEMA, POST_USER_SCHEMA , GET_USER_BY_ID_SCHEMA , UPDATE_USER_BY_ID_SCHEMA, UPDATE_USER_ROLE_SCHEMA, UPDATE_USER_STATUS_SCHEMA, GET_ADMIN_COURSE_LIST_SCHEMA, POST_ADMIN_COURSE_CREATE_SCHEMA, GET_ADMIN_COURSE_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_UPDATE_SCHEMA,GET_COURSE_LESSON_CONTENT_SCHEMA,UPDATE_COURSE_LESSON_CONTENT_SCHEMA
 # -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
     page_size = 10  # Default number of items per page
@@ -539,3 +537,71 @@ class AdminCourseLessonRetrieveUpdateView(APIView):
         
         return api_response(status.HTTP_200_OK, messages.COURSE_LESSON_UPDATED_SUCCESS_MESSAGE, result)
 # -----------------------------------------
+
+# -----------------------------------------
+
+# Retrieve and update the details of a Course Lesson Content by ID.
+# This view is accessible to authenticated users with admin role only.
+   
+
+class AdminCourseLessonContentRetrieveUpdateView(APIView):
+    """
+    Handles GET and PUT operations for Course Lesson Content.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUserRole]  # Include both permissions
+
+    @extend_schema(**GET_COURSE_LESSON_CONTENT_SCHEMA)
+    def get(self, request, course_lesson_id, *args, **kwargs):
+        """
+        Retrieve Course Lesson Content by its ID.
+        """
+        try:
+            course_content = get_course_lesson_content_by_id(course_lesson_id)
+            if not course_content:
+                return Response(
+                    {"status": 404, "message": "Course Lesson Content not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            return Response(
+                {"status": 200, "data": course_content},
+                status=status.HTTP_200_OK,
+            )
+        except ValueError as e:
+            return Response(
+                {"status": 500, "message": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+    @extend_schema(**UPDATE_COURSE_LESSON_CONTENT_SCHEMA)
+        
+    
+    def put(self, request, course_lesson_id, *args, **kwargs):
+        """
+        Update a course lesson content by its ID with the provided data.
+        """
+        try:
+            course_lesson_content = CourseLessonContent.objects.get(id=course_lesson_id)
+            course_lesson_content.title = request.data.get('title', course_lesson_content.title)
+            course_lesson_content.content = request.data.get('content', course_lesson_content.content)
+            course_lesson_content.save()
+
+            return Response({
+                'status': 200,
+                'data': {
+                    'id': course_lesson_content.id,
+                    'title': course_lesson_content.title,
+                    'content': course_lesson_content.content,
+                    'created_at': course_lesson_content.created_at,
+                }
+            }, status=status.HTTP_200_OK)
+        except CourseLessonContent.DoesNotExist:
+            return Response({
+                'status': 404,
+                'message': 'Course Lesson Content not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'status': 400,
+                'message': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    
