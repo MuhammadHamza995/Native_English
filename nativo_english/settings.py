@@ -77,15 +77,17 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'NATIVO ENGLISH APIs',
     'DESCRIPTION': 'APIs to access NATIVO ENGLISH PLATFORM',
     'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': True,
     'SWAGGER_UI_DIST': 'SIDECAR',  # shorthand to use the sidecar instead
     'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
     'REDOC_DIST': 'SIDECAR',
 
     'SWAGGER_UI_SETTINGS': {
         'persistAuthorization': True,  # Keeps authorization data between refreshes
-        'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SuffixOperationIdSchema'
+        # 'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SuffixOperationIdSchema'
     },
+
+    'SERVE_INCLUDE_SCHEMA': False,
+    
     'SECURITY': [{'BearerAuth': []}],  # Reference the security scheme here
     'COMPONENT_SPLIT_REQUEST': True,   # Helpful if you want to split request schemas
     'SECURITY_DEFINITIONS': {
@@ -96,6 +98,7 @@ SPECTACULAR_SETTINGS = {
             'description': 'JWT Authorization header using the Bearer scheme. Example: "Bearer <your JWT token>"'
         }
     },
+    
 }
 
 SIMPLE_JWT = {
