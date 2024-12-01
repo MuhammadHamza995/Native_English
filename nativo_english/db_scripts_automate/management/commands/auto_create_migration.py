@@ -52,7 +52,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("No SQL files found to migrate."))
             return
         
-         # Check if any SQL file is not already executed
+        scripts_count = len(sql_files)
+        
+        # Check if any SQL file is not already executed
         for sql_file in sql_files:
             file_name = os.path.basename(sql_file)  # Get the file name only
             build_number = settings.BUILD_VERSION  # Current build number from settings
@@ -60,9 +62,12 @@ class Command(BaseCommand):
             # Check if an entry exists in the database for this file and build number
             if ExecutedSQLScript.objects.filter(file_name=file_name, build_number=build_number).exists():
                 # If any file is not executed, return True (migration file should be created)
-                print("NO MIGRATION FILE REQUIRED FOR DB SCIRPTS")
-                return
-
+                scripts_count = scripts_count - 1
+        
+        if not scripts_count:
+            print("NO MIGRATION FILE REQUIRED FOR DB SCIRPTS")
+            return
+        
         # Generate a unique migration file name (e.g., with timestamp)
         migration_file_name = f"{(migration_counter+1):04}_auto_run_sql_scripts.py"
         migration_file_path = os.path.join(migration_dir, migration_file_name)

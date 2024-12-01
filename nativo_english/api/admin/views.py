@@ -26,7 +26,7 @@ from rest_framework.exceptions import NotFound
 from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id, get_all_course_sections, get_course_section_by_id, update_course_section, create_course_section, create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson
 import json
 from django.contrib.auth.hashers import make_password
-from .swagger_schema import GET_USER_LIST_SCHEMA, POST_USER_SCHEMA , GET_USER_BY_ID_SCHEMA , UPDATE_USER_BY_ID_SCHEMA, UPDATE_USER_ROLE_SCHEMA, UPDATE_USER_STATUS_SCHEMA, GET_ADMIN_COURSE_LIST_SCHEMA, POST_ADMIN_COURSE_CREATE_SCHEMA, GET_ADMIN_COURSE_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_UPDATE_SCHEMA
+from .swagger_schema import GET_USER_LIST_SCHEMA, POST_USER_SCHEMA , GET_USER_BY_ID_SCHEMA , UPDATE_USER_BY_ID_SCHEMA, UPDATE_USER_ROLE_SCHEMA, UPDATE_USER_STATUS_SCHEMA, GET_ADMIN_COURSE_LIST_SCHEMA, POST_ADMIN_COURSE_CREATE_SCHEMA, GET_ADMIN_COURSE_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_UPDATE_SCHEMA, GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA, GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA, POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA, GET_ADMIN_COURSE_ALL_SECTION_SCHEMA, POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA, GET_ADMIN_COURSE_SECTION_DETAIL_BY_ID_SCHEMA, UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA
 
 # -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
@@ -304,34 +304,7 @@ class AdminCourseSectionListCreateView(APIView):
     ]
     pagination_class = AdminUserPagination
 
-    @extend_schema(
-        tags=['Admin Course Section'],
-        summary="Get All Courses Sections (Admin access only)",
-        description="Lists all courses sections with optional filters by title and course_id.",
-        parameters=[
-        OpenApiParameter(
-            name="title",
-            location=OpenApiParameter.QUERY,
-            description="Title of the course section to filter by (optional).",
-            required=False,
-            type=OpenApiTypes.STR
-        ),
-        OpenApiParameter(
-            name="course_id",
-            location=OpenApiParameter.QUERY,
-            description="ID of the course to retrieve associated sections (optional).",
-            required=False,
-            type=OpenApiTypes.INT
-        ),
-        OpenApiParameter(
-            name="page",
-            location=OpenApiParameter.QUERY,
-            description="Page number for paginated results (optional).",
-            required=False,
-            type=OpenApiTypes.INT
-        ),
-        ]
-    )
+    @extend_schema(**GET_ADMIN_COURSE_ALL_SECTION_SCHEMA)
     def get(self, request, *args, **kwargs):
         title = request.query_params.get('title')
         course_id = request.query_params.get('course_id')
@@ -355,12 +328,7 @@ class AdminCourseSectionListCreateView(APIView):
 
         return api_response(status.HTTP_200_OK, messages.SECTION_LIST_RETRIEVED_SUCCESS_MESSAGE, sections)
 
-    @extend_schema(
-        tags=['Admin Course Section'],
-        summary="Creates a new course section (Can be accessed by user with admin role only)",
-        description="Creates a new course section by Admin User.",
-    )
-
+    @extend_schema(**POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA)
     def post(self, request, *args, **kwargs):
         result = create_course_section(request.data)
         if isinstance(result, dict):
@@ -380,26 +348,12 @@ class AdminCourseSectionRetrieveUpdateView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUserRole]
     pagination_class = PageNumberPagination
 
-    @extend_schema(
-        tags=['Admin Course Section'],
-        summary="Retrieve Course Section by ID (Admin access only)",
-        # parameters=[
-        #     OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="Course Section ID")
-        # ]
-    )
+    @extend_schema(**GET_ADMIN_COURSE_SECTION_DETAIL_BY_ID_SCHEMA)
     def get(self, request, course_section_id,*args, **kwargs):
         course_data = get_course_section_by_id(course_section_id)
         return api_response(status.HTTP_200_OK, messages.COURSE_SECTION_RETRIEVED_SUCCESS_MESSAGE, course_data)
 
-    @extend_schema(
-        tags=['Admin Course Section'],
-        summary="Update course section by ID (Can be accessed by user with admin role only)",
-        description="Updates the course section by specific Id.",
-        # parameters=[
-        #     OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="Course Section ID")
-        # ],
-    )
-
+    @extend_schema(**UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA)
     def put(self, request, course_section_id=None, *args, **kwargs):
         result = update_course_section(course_section_id, request.data)
 
@@ -423,41 +377,7 @@ class AdminCourseLessonListCreateView(APIView):
     ]
     pagination_class = AdminUserPagination
 
-    @extend_schema(
-        tags=['Admin Course Lesson'],
-        summary="Get All Courses Lessons (Admin access only)",
-        description="Lists all courses lessons with optional filters by title, section_id and course_id.",
-        parameters=[
-        OpenApiParameter(
-            name="title",
-            location=OpenApiParameter.QUERY,
-            description="Title of the course section to filter by (optional).",
-            required=False,
-            type=OpenApiTypes.STR
-        ),
-        OpenApiParameter(
-            name="course_id",
-            location=OpenApiParameter.QUERY,
-            description="ID of the course to retrieve associated lessons (optional).",
-            required=False,
-            type=OpenApiTypes.INT
-        ),
-        OpenApiParameter(
-            name="section_id",
-            location=OpenApiParameter.QUERY,
-            description="ID of the section to retrieve associated lessons (optional).",
-            required=False,
-            type=OpenApiTypes.INT
-        ),
-        OpenApiParameter(
-            name="page",
-            location=OpenApiParameter.QUERY,
-            description="Page number for paginated results (optional).",
-            required=False,
-            type=OpenApiTypes.INT
-        ),
-        ]
-    )
+    @extend_schema(**GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA)
     def get(self, request, *args, **kwargs):
         title = request.query_params.get('title')
         course_id = request.query_params.get('course_id')
@@ -485,11 +405,7 @@ class AdminCourseLessonListCreateView(APIView):
 
         return api_response(status.HTTP_200_OK, messages.LESSON_LIST_RETRIEVED_SUCCESS_MESSAGE, lessons)
 
-    @extend_schema(
-        tags=['Admin Course Lesson'],
-        summary="Creates a new course lesson (Can be accessed by user with admin role only)",
-        description="Creates a new course lesson by Admin User.",
-    )
+    @extend_schema(**POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA)
 
     def post(self, request, *args, **kwargs):
         result = create_course_lesson(request.data)
@@ -511,26 +427,13 @@ class AdminCourseLessonRetrieveUpdateView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUserRole]
     pagination_class = PageNumberPagination
 
-    @extend_schema(
-        tags=['Admin Course Lesson'],
-        summary="Retrieve Course Lesson by ID (Admin access only)",
-        # parameters=[
-        #     OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="Course Section ID")
-        # ]
-    )
+    @extend_schema(**GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA)
     def get(self, request, course_lesson_id,*args, **kwargs):
         course_data = get_course_lesson_by_id(course_lesson_id)
         return api_response(status.HTTP_200_OK, messages.COURSE_LESSON_RETRIEVED_SUCCESS_MESSAGE, course_data)
 
-    @extend_schema(
-        tags=['Admin Course Lesson'],
-        summary="Update course lesson by ID (Can be accessed by user with admin role only)",
-        description="Updates the course lesson by specific Id.",
-        # parameters=[
-        #     OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="Course Section ID")
-        # ],
-    )
 
+    @extend_schema(**UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA)
     def put(self, request, course_lesson_id=None, *args, **kwargs):
         result = update_course_lesson(course_lesson_id, request.data)
 
