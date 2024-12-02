@@ -24,4 +24,5 @@ urlpatterns = [
     path('course/section/lesson/<int:course_lesson_id>/', AdminCourseLessonRetrieveUpdateView.as_view(), name='course-lesson-detail'),
 
     path('course/section/lesson/<int:lesson_id>/content/', AdminCourseLessonContentListCreateView.as_view(), name='course-section-lesson-content-create-list'),
+    path('lesson-content/', AdminCourseLessonContentListCreateView.as_view(), name='admin-lesson-content'),
 ]

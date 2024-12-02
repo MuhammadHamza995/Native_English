@@ -7,13 +7,17 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import PermissionDenied
 from .serializer import AdminUserSerializer
 from nativo_english.api.shared.course.serializer import CourseSerializer, CourseSectionSerializer, CourseLessonSerializer
 from nativo_english.api.shared.user.models import User
 from .permissions import IsAdminUserRole
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound,ValidationError
+from rest_framework.response import Response
+from nativo_english.api.shared.course.models import LessonContent
 from nativo_english.api.shared.utils import api_response
+from nativo_english.api.shared.upload_engine import handle_file_upload
 from nativo_english.api.shared.course.views import (
     get_all_courses, create_course, update_course, get_course_by_id, get_all_courses_with_pagination, get_course_detail_by_id, 
     get_all_course_sections, get_course_section_by_id, update_course_section, create_course_section, 
@@ -29,7 +33,8 @@ from .swagger_schema import (
     GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA, POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA, 
     GET_ADMIN_COURSE_ALL_SECTION_SCHEMA, POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA, 
     GET_ADMIN_COURSE_SECTION_DETAIL_BY_ID_SCHEMA, UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA,
-    GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA)
+    GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA,
+    POST_ADMIN_COURSE_LESSON_CONTENT_CREATE_SCHEMA)
 
 # -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
@@ -456,3 +461,64 @@ class AdminCourseLessonContentListCreateView(APIView):
     def get(self, request, lesson_id, *args, **kwargs):
         
         return
+    
+# upload course lesson content 
+    
+    @extend_schema(**POST_ADMIN_COURSE_LESSON_CONTENT_CREATE_SCHEMA)
+    def post(self, request, *args, **kwargs):
+        # Ensure the user is an admin
+        if request.user.role != 'admin':
+            raise PermissionDenied("You do not have permission to perform this action.")
+        
+        # Extract data
+        content_type = request.data.get('content_type')
+        title = request.data.get('content_title')
+        position = request.data.get('lesson_content_position')
+        language = request.data.get('language')
+        file = request.FILES.get('file')  # Uploaded file
+
+        # Validate content type
+        allowed_types = ['text', 'audio', 'video', 'image']
+        if content_type not in allowed_types:
+            return Response({"error": "Invalid content type."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Handle file upload if applicable
+        file_url = None
+        if content_type in ['audio', 'video', 'image'] and file:
+            allowed_extensions = {
+                'audio': ['.mp3', '.wav'],
+                'video': ['.mp4', '.avi', '.mkv'],
+                'image': ['.jpg', '.jpeg', '.png', '.gif']
+            }
+            try:
+                file_url = handle_file_upload(file, allowed_extensions[content_type])
+            except ValidationError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create lesson content
+        lesson_content = LessonContent.objects.create(
+            content_title=title,
+            lesson_content_position=position,
+            fk_course_lesson_id_id=request.data.get('fk_course_lesson_id'),  # Assuming the lesson ID is passed
+            is_active=request.data.get('is_active', False),
+            language=language,
+            content_type=content_type,
+            content_text=request.data.get('content_text') if content_type == 'text' else None,
+            content_audio_url=file_url if content_type == 'audio' else None,
+            content_video_url=file_url if content_type == 'video' else None,
+            content_image_url=file_url if content_type == 'image' else None,
+            created_by=request.user
+        )
+
+        return Response(
+            {
+                "message": "Lesson content created successfully.",
+                "data": {
+                    "id": lesson_content.id,
+                    "content_title": lesson_content.content_title,
+                    "content_type": lesson_content.content_type,
+                    "file_url": file_url,
+                }
+            },
+            status=status.HTTP_201_CREATED
+        )
