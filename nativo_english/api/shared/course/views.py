@@ -118,6 +118,67 @@ def update_course(course_id, data):
     except Exception as ex:
         raise ex
 
+
+def get_all_courses_with_pagination(page_num, page_size, title, mode, is_paid, search_query, sort_field, sort_order):
+    """
+    Retrieves a list of Course instances, optionally filtered by name or payment status.
+
+    This function fetches all Course instances from the database and applies optional filters:
+    - If `filter_title` is provided, filters the courses by title (case-insensitive, partial match).
+    - If `filter_is_paid` is provided, filters the courses based on whether they are paid.
+    - if `search_query` is provided, filters the courses by title / description with that search query
+    - if `sort_field` is provided, sort the data based on that field
+    - if `sort_direction` is provided, sort the data base on the filed and provided direction
+
+    Args:
+        filter_title (str, optional): A string to filter courses by title. Defaults to None.
+        filter_is_paid (bool, optional): A boolean to filter courses by payment status (e.g., free or paid).
+                                         Defaults to None.
+
+    Returns:
+        list: A list of serialized course data. Each item in the list represents a course and its details.
+    """
+    try:
+        all_courses_results = call_plpgsql_function('courses_list_with_pagination_get', 
+            page_num, page_size, title, mode, is_paid, search_query, sort_field, sort_order
+        )
+
+        print(page_num, page_size, title, mode, is_paid, search_query, sort_field, sort_order)
+        # Prepare the response
+        courses_data = [
+            {
+                'course_id': row['course_id'],
+                'title': row['title'],
+                'description': row['description'],
+                'is_paid': row['is_paid'],
+                'price': row['price'],
+                'mode': row['mode'],
+                'avg_rating': row['avg_rating'],
+                'is_active': row['is_active'],
+                'owner_name': row['owner_name'],
+                'owner': row['owner'],
+                'enrollment_count': row['enrollment_count'],
+            }
+            for row in all_courses_results
+        ]     
+        
+        total_count = all_courses_results[-1]['total_count'] if all_courses_results else 0  # Extract the total count from the last column
+        total_pages = (total_count + page_size - 1) // page_size  # Calculate total pages
+        response_data = {
+            'courses': courses_data,
+            'total_count': total_count,
+            'total_pages': total_pages,
+            'current_page': page_num,
+            'page_size': page_size
+        }
+        
+        # return all_courses_results
+        return response_data
+    
+    except Exception as ex:
+        raise ex
+
+
 #--------- COURSE SECTION  --------------
 
 def create_course_section(data):

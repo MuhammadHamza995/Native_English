@@ -1,7 +1,8 @@
 # Define OpenAPI schema components for better readability
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse
 from drf_spectacular.types import OpenApiTypes
-from nativo_english.api.shared.swagger_sample_responses import SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE
+from nativo_english.api.shared.swagger_sample_responses import SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE, SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE_FOR_COURSE
+from nativo_english.api.shared import messages
 
 # --------------------------------------------
 # Users Swagger Schema Admin
@@ -270,9 +271,23 @@ GET_ADMIN_COURSE_LIST_SCHEMA = {
     'description': 'Lists all courses with optional filters by title and is_paid, supports pagination.',
     'parameters': [
         OpenApiParameter(
+            name="page_num",
+            location=OpenApiParameter.QUERY,
+            description="Pagination - Page Number for data if there are so many courses in the system",
+            required=False,
+            type=OpenApiTypes.INT,
+        ),
+        OpenApiParameter(
+            name="page_size",
+            location=OpenApiParameter.QUERY,
+            description="Pagination - Page size, number of records to return per page",
+            required=False,
+            type=OpenApiTypes.INT,
+        ),
+        OpenApiParameter(
             name="title",
             location=OpenApiParameter.QUERY,
-            description="Name of the course to filter by (optional)",
+            description="Title of the course to search from",
             required=False,
             type=OpenApiTypes.STR,
         ),
@@ -284,13 +299,38 @@ GET_ADMIN_COURSE_LIST_SCHEMA = {
             type=OpenApiTypes.BOOL,
         ),
         OpenApiParameter(
-            name="page",
+            name="mode",
             location=OpenApiParameter.QUERY,
-            description="Page number to retrieve data from (optional, default: 1)",
+            description="Mode - Self-paced, online",
             required=False,
-            type=OpenApiTypes.INT,
-            default=1  # Optional, to specify a default value for pagination
+            type=OpenApiTypes.STR,  # You should use STR since it's a textual value
+            enum=["","self", "live"],  # These are the fixed values you want in the dropdown
+            default="",  # Optional, specify the default value
         ),
+        OpenApiParameter(
+            name="search",
+            location=OpenApiParameter.QUERY,
+            description="Search - Search for courses this will be helpful to integrate with search bar",
+            required=False,
+            type=OpenApiTypes.STR,  # You should use STR since it's a textual value
+        ),
+        OpenApiParameter(
+            name="sort_by",
+            location=OpenApiParameter.QUERY,
+            description="Sort By - Sort by fields",
+            required=False,
+            type=OpenApiTypes.STR,  # You should use STR since it's a textual value
+            enum=['course_id', 'title', 'mode', 'avg_rating', 'price', 'enrollment_count', 'created_at', 'updated_at']
+        ),
+        OpenApiParameter(
+            name="sort_order",
+            location=OpenApiParameter.QUERY,
+            description="Sort order - Sort order by fields",
+            required=False,
+            type=OpenApiTypes.STR,  # You should use STR since it's a textual value
+            enum=['DESC', 'ASC']
+        ),
+        
     ],
     'responses': {
         200: OpenApiResponse(
@@ -298,25 +338,34 @@ GET_ADMIN_COURSE_LIST_SCHEMA = {
             response={
                 'type': 'object',
                 'properties': {
-                    'count': {'type': 'integer'},
-                    'num_pages': {'type': 'integer'},
-                    'current_page': {'type': 'integer'},
-                    'results': {
-                        'type': 'array',
-                        'items': {
-                            'type': 'object',
-                            'properties': {
-                                'id': {'type': 'integer'},
-                                'title': {'type': 'string'},
-                                'is_paid': {'type': 'boolean'},
-                                'description': {'type': 'string'},
-                            },
-                        },
-                    },
-                },
-            },
+                    'status': {'type': 'string', 'example':'success'},
+                    'status_code': {'type': 'integer', 'example':'200'},
+                    'message': {'type':'string', 'example': messages.COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE},
+                    'data': {'type': 'object', 'example': {
+                        'courses': [{
+                                "course_id": 1,
+                                "title": "Math",
+                                "description": "Math 101",
+                                "is_paid": 'true',
+                                "price": 200,
+                                "mode": "self",
+                                "avg_rating": 0,
+                                "is_active": 'true',
+                                "owner_name": "John Cena",
+                                "owner": 2,
+                                "enrollment_count": 0
+                                }
+                            ],
+                        "total_count": 1,
+                        "total_pages": 1,
+                        "current_page": 1,
+                        "page_size": 10  
+                        }
+                    }
+                }
+            }
         ),
-        404: SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE ['404'],
+        404: SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE_FOR_COURSE['404'],
     },
 }
 
@@ -325,19 +374,6 @@ POST_ADMIN_COURSE_CREATE_SCHEMA = {
     'summary': 'Create a New Course (Admin access only)',
     'operation_id': 'create_new_course_by_admin',
     'description': 'Creates a new course by an Admin User. Requires course title, description, and paid status.',
-    'request': {
-        'application/json': {
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'title': {'type': 'string', 'description': 'Title of the course (required, max 100 characters)'},
-                    'is_paid': {'type': 'boolean', 'description': 'Whether the course is paid or free (required)'},
-                    'description': {'type': 'string', 'description': 'Detailed description of the course'},
-                },
-                'required': ['title', 'is_paid'],
-            }
-        }
-    },
     'responses': {
         201: OpenApiResponse(
             description='Course successfully created',

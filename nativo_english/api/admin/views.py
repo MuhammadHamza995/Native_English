@@ -14,7 +14,7 @@ from .permissions import IsAdminUserRole
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
 from nativo_english.api.shared.utils import api_response
-from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id, get_all_course_sections, get_course_section_by_id, update_course_section, create_course_section, create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson
+from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id, get_all_course_sections, get_course_section_by_id, get_all_courses_with_pagination, update_course_section, create_course_section, create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson
 from nativo_english.api.shared.utils import api_response
 from .swagger_schema import GET_USER_LIST_SCHEMA, POST_USER_SCHEMA , GET_USER_BY_ID_SCHEMA , UPDATE_USER_BY_ID_SCHEMA, UPDATE_USER_ROLE_SCHEMA, UPDATE_USER_STATUS_SCHEMA, GET_ADMIN_COURSE_LIST_SCHEMA, POST_ADMIN_COURSE_CREATE_SCHEMA, GET_ADMIN_COURSE_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_UPDATE_SCHEMA, GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA, GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA, POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA, GET_ADMIN_COURSE_ALL_SECTION_SCHEMA, POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA, GET_ADMIN_COURSE_SECTION_DETAIL_BY_ID_SCHEMA, UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA
 
@@ -209,32 +209,18 @@ class AdminCourseListCreateView(APIView):
 
     @extend_schema(**GET_ADMIN_COURSE_LIST_SCHEMA)
     def get(self, request, *args, **kwargs):
-        # Retrieve query parameters for filtering
-        title = request.query_params.get('title')
-        is_paid = request.query_params.get('is_paid')
+        page_num = int(request.query_params.get('page_num', 1))
+        page_size = int(request.query_params.get('page_size', 10))
+        filter_title = request.query_params.get('title', None)
+        filter_mode = request.query_params.get('mode', None)
+        filter_is_paid = request.query_params.get('is_paid', None)
+        search_query = request.query_params.get('search', None)
+        sort_field = request.query_params.get('sort_by', None)
+        sort_order = request.query_params.get('sort_order', None)
 
-        queryset = get_all_courses(filter_title=title, filter_is_paid=is_paid)
-        paginator = self.pagination_class()
-        page = paginator.paginate_queryset(queryset, request)
+        queryset = get_all_courses_with_pagination(page_num, page_size, filter_title, filter_mode, filter_is_paid, search_query, sort_field, sort_order)
 
-        serializer = self.serializer_class(page, many=True)
-        
-        if not queryset:
-            return api_response(status.HTTP_404_NOT_FOUND, messages.COURSE_NOT_FOUND_MESSAGE, serializer.data)
-        
-        if page is not None:
-            serializer = self.serializer_class(page, many=True)
-            response_data = {
-                "count": paginator.page.paginator.count,
-                "num_pages": paginator.page.paginator.num_pages,
-                "current_page": paginator.page.number,
-                "results": serializer.data,
-            }
-            return api_response(status.HTTP_200_OK, messages.COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE, response_data)
-
-        serializer = self.serializer_class(queryset, many=True)
-        
-        return api_response(status.HTTP_200_OK, messages.COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE, serializer.data)
+        return api_response(status.HTTP_200_OK, messages.COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE, queryset)
 
 
     @extend_schema(**POST_ADMIN_COURSE_CREATE_SCHEMA)
@@ -276,7 +262,7 @@ class AdminCourseRetrieveUpdateView(APIView):
         return api_response(status.HTTP_400_BAD_REQUEST, messages.BAD_REQUEST_ERROR_MESSAGE + str(result))
 
     # Return success message
-     return api_response(status.HTTP_200_OK, messages.COURSE_UPDATED_MESSAGE, result)
+     return api_response(status.HTTP_200_OK, messages.COURSE_UPDATED_SUCCESS_MESSAGE, result)
 # -----------------------------------------
 
 # -----------------------------------------

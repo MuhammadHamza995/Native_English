@@ -15,6 +15,8 @@ def call_plpgsql_function(function_name, *params):
         # Prepare the parameter placeholders
         param_placeholders = ', '.join(['%s'] * len(params))
 
+        print(param_placeholders)
+
         # Construct the SQL query
         query = f"SELECT * FROM {function_name}({param_placeholders})"
         

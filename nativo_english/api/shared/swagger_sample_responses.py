@@ -77,3 +77,26 @@ SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE = {
     ),
 }
 
+SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE_FOR_COURSE = {
+    '404': OpenApiResponse(
+        description='Courses not found',
+        response={
+            'type': 'object',
+            'properties': {
+                'status_code': {'type': 'integer', 'example': 404},  # Added status_code
+                'status': {'type': 'string', 'example': 'error'},
+                'message': {'type': 'string', 'example': 'User not found.'},
+            },
+        },
+        examples=[
+            OpenApiExample(
+                'Courses not found',
+                value={
+                    'status_code': 404,
+                    'status': 'error',
+                    'message': 'Courses not found.'
+                }
+            )
+        ]
+    ),
+}
