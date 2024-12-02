@@ -14,9 +14,22 @@ from .permissions import IsAdminUserRole
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
 from nativo_english.api.shared.utils import api_response
-from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id, get_all_course_sections, get_course_section_by_id, get_all_courses_with_pagination, get_course_detail_by_id, update_course_section, create_course_section, create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson
+from nativo_english.api.shared.course.views import (
+    get_all_courses, create_course, update_course, get_course_by_id, get_all_courses_with_pagination, get_course_detail_by_id, 
+    get_all_course_sections, get_course_section_by_id, update_course_section, create_course_section, 
+    create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson)
 from nativo_english.api.shared.utils import api_response
-from .swagger_schema import GET_USER_LIST_SCHEMA, POST_USER_SCHEMA , GET_USER_BY_ID_SCHEMA , UPDATE_USER_BY_ID_SCHEMA, UPDATE_USER_ROLE_SCHEMA, UPDATE_USER_STATUS_SCHEMA, GET_ADMIN_COURSE_LIST_SCHEMA, POST_ADMIN_COURSE_CREATE_SCHEMA, GET_ADMIN_COURSE_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_UPDATE_SCHEMA, GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA, GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA, POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA, GET_ADMIN_COURSE_ALL_SECTION_SCHEMA, POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA, GET_ADMIN_COURSE_SECTION_DETAIL_BY_ID_SCHEMA, UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA
+from .swagger_schema import (
+    GET_USER_LIST_SCHEMA, POST_USER_SCHEMA , 
+    GET_USER_BY_ID_SCHEMA , UPDATE_USER_BY_ID_SCHEMA, 
+    UPDATE_USER_ROLE_SCHEMA, UPDATE_USER_STATUS_SCHEMA, 
+    GET_ADMIN_COURSE_LIST_SCHEMA, POST_ADMIN_COURSE_CREATE_SCHEMA, 
+    GET_ADMIN_COURSE_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_UPDATE_SCHEMA, 
+    GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA, 
+    GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA, POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA, 
+    GET_ADMIN_COURSE_ALL_SECTION_SCHEMA, POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA, 
+    GET_ADMIN_COURSE_SECTION_DETAIL_BY_ID_SCHEMA, UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA,
+    GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA)
 
 # -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
@@ -415,7 +428,7 @@ class AdminCourseLessonRetrieveUpdateView(APIView):
     pagination_class = PageNumberPagination
 
     @extend_schema(**GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA)
-    def get(self, request, course_lesson_id,*args, **kwargs):
+    def get(self, request, course_lesson_id, *args, **kwargs):
         course_data = get_course_lesson_by_id(course_lesson_id)
         return api_response(status.HTTP_200_OK, messages.COURSE_LESSON_RETRIEVED_SUCCESS_MESSAGE, course_data)
 
@@ -429,3 +442,17 @@ class AdminCourseLessonRetrieveUpdateView(APIView):
         
         return api_response(status.HTTP_200_OK, messages.COURSE_LESSON_UPDATED_SUCCESS_MESSAGE, result)
 # -----------------------------------------
+
+
+# -----------------------------------------
+# This view corresponds to following endpoints
+# 1. Get all Lesson Content(can only be access by Admin user role --> GET /api/admin/course/lesson/{lesson_id}/content/)
+# 2. Create New Course Lesson Content user request data (can only be access by Admin user rol --> POST /api/admin/course/lesson/{lesson_id}/content)
+# -----------------------------------------
+class AdminCourseLessonContentListCreateView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUserRole]
+
+    @extend_schema(**GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA)
+    def get(self, request, lesson_id, *args, **kwargs):
+        
+        return

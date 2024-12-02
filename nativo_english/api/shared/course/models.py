@@ -73,7 +73,8 @@ class LessonContent(models.Model):
     CONTENT_TYPE_CHOICES = (
         ('text', 'Text'),
         ('audio', 'Audio'),
-        ('video', 'video')
+        ('video', 'video'),
+        ('image', 'image')
     )
 
     content_title = models.CharField(max_length=200, null=True)

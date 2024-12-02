@@ -548,7 +548,7 @@ UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA = {
 # Get All courses Lessons by Admin Schema
 # --------------------------------------------
 GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA = {
-    'tags': ['AdminCourseLesson'],
+    'tags': ['AdminCourseSectionLesson'],
     'summary': 'Get All Courses Lessons (Admin access only)',
     'description': 'Lists all courses lessons with optional filters by title, section_id and course_id.',
     'operation_id': 'get_course_lesson_list',
@@ -585,7 +585,7 @@ GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA = {
 }
 
 GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA = {
-    'tags': ['AdminCourseLesson'],
+    'tags': ['AdminCourseSectionLesson'],
     'summary': 'Retrieve Course Lesson by ID (Admin access only)',
     'operation_id': 'get_course_lesson_details_by_id',
     'description': 'Retrieves a course lesson by its ID for admin users.',
@@ -622,14 +622,14 @@ GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA = {
 }
 
 POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA = {
-    'tags': ['AdminCourseLesson'],
+    'tags': ['AdminCourseSectionLesson'],
     'summary': 'Creates a new course lesson (Can be accessed by user with admin role only)',
     'operation_id': 'create_course_lesson',
     'description': 'Creates a new course lesson by Admin User.',
 }
 
 UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA = {
-    'tags': ['AdminCourseLesson'],
+    'tags': ['AdminCourseSectionLesson'],
     'summary': 'Update course lesson by ID (Admin access only)',
     'operation_id': 'update_course_lesson_by_id',
     'description': 'Updates a course lesson based on the provided ID and input data.',
@@ -664,3 +664,14 @@ UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA = {
     },
 }
 # --------------------------------------------
+
+
+# --------------------------------------------
+# Get All courses lesson content by Admin Schema
+# --------------------------------------------
+GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA = {
+    'tags': ['AdminCourseSectionLessonContent'],
+    'summary': 'Get All Lesson content (Admin access only)',
+    'operation_id': 'get_lesson_content_list',
+    'description': 'Lists all lesson content'
+}

@@ -1,5 +1,10 @@
 from django.urls import path, include
-from .views import AdminUserListCreateView, AdminUserRetrieveUpdateView, AdminUserRoleUpdateView, AdminUserActivateSuspendUpdateView, AdminCourseListCreateView, AdminCourseRetrieveUpdateView, AdminCourseSectionListCreateView, AdminCourseSectionRetrieveUpdateView, AdminCourseLessonListCreateView, AdminCourseLessonRetrieveUpdateView
+from .views import (
+    AdminUserListCreateView, AdminUserRetrieveUpdateView, AdminUserRoleUpdateView, AdminUserActivateSuspendUpdateView, 
+    AdminCourseListCreateView, AdminCourseRetrieveUpdateView, 
+    AdminCourseSectionListCreateView, AdminCourseSectionRetrieveUpdateView, 
+    AdminCourseLessonListCreateView, AdminCourseLessonRetrieveUpdateView,
+    AdminCourseLessonContentListCreateView)
 
 urlpatterns = [
     path('users/', AdminUserListCreateView.as_view(), name='user-create-list'),
@@ -17,4 +22,6 @@ urlpatterns = [
 
     path('course/section/lesson', AdminCourseLessonListCreateView.as_view(), name='course-lesson-create-list'),
     path('course/section/lesson/<int:course_lesson_id>/', AdminCourseLessonRetrieveUpdateView.as_view(), name='course-lesson-detail'),
+
+    path('course/section/lesson/<int:lesson_id>/content/', AdminCourseLessonContentListCreateView.as_view(), name='course-section-lesson-content-create-list'),
 ]
