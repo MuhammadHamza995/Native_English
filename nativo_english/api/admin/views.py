@@ -214,11 +214,22 @@ class AdminCourseListCreateView(APIView):
         filter_title = request.query_params.get('title', None)
         filter_mode = request.query_params.get('mode', None)
         filter_is_paid = request.query_params.get('is_paid', None)
+        filter_is_active = request.query_params.get('is_active', True)
         search_query = request.query_params.get('search', None)
         sort_field = request.query_params.get('sort_by', None)
         sort_order = request.query_params.get('sort_order', None)
+        filter_owner_id = request.query_params.get('filter_owner_id', None)
 
-        queryset = get_all_courses_with_pagination(page_num, page_size, filter_title, filter_mode, filter_is_paid, search_query, sort_field, sort_order)
+        queryset = get_all_courses_with_pagination(page_num, 
+                                                   page_size, 
+                                                   filter_title, 
+                                                   filter_mode, 
+                                                   filter_is_paid, 
+                                                   filter_is_active, 
+                                                   search_query, 
+                                                   sort_field, 
+                                                   sort_order,
+                                                   filter_owner_id)
 
         return api_response(status.HTTP_200_OK, messages.COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE, queryset)
 

@@ -1,11 +1,11 @@
 /*****************************************************
 Author: Muhammad Hassaan Bashir
 Ticket: 
-Description: This function will return all courses with sorting feature on fields
+Description: This function will return all courses with sorting and filtering options, including owner-specific filtering.
 *****************************************************/
 
 -- Drop the function if it already exists
-DROP FUNCTION IF EXISTS courses_list_with_pagination_get(INT, INT, TEXT, TEXT, BOOLEAN, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS courses_list_with_pagination_get(INT, INT, TEXT, TEXT, BOOLEAN, BOOLEAN, TEXT, TEXT, TEXT, BIGINT);
 
 -- Create or replace the function
 CREATE OR REPLACE FUNCTION courses_list_with_pagination_get(
@@ -14,9 +14,11 @@ CREATE OR REPLACE FUNCTION courses_list_with_pagination_get(
     filter_title TEXT DEFAULT NULL,
     filter_mode TEXT DEFAULT NULL,
     filter_is_paid BOOLEAN DEFAULT NULL,
+    filter_is_active BOOLEAN DEFAULT TRUE,
     search_query TEXT DEFAULT NULL,
     sort_field TEXT DEFAULT 'created_at',  -- Default sort by creation date
-    sort_direction TEXT DEFAULT 'DESC'    -- Default sort direction is descending
+    sort_direction TEXT DEFAULT 'DESC',   -- Default sort direction is descending
+    filter_owner_id BIGINT DEFAULT NULL   -- Filter by owner ID
 )
 
 RETURNS TABLE (
@@ -43,10 +45,11 @@ BEGIN
     SELECT COUNT(*) INTO total_courses
     FROM course_course c
     LEFT JOIN course_courseenrollment ce ON c.id = ce.fk_course_id
-    WHERE c.is_active = TRUE
+    WHERE c.is_active = filter_is_active
     AND (filter_title IS NULL OR c.title ILIKE '%' || filter_title || '%')
     AND (filter_mode IS NULL OR c.mode ILIKE '%' || filter_mode || '%')
     AND (filter_is_paid IS NULL OR c.is_paid = filter_is_paid)
+    AND (filter_owner_id IS NULL OR c.fk_owner_id = filter_owner_id)
     AND (
         search_query IS NULL
         OR c.title ILIKE '%' || search_query || '%'
@@ -55,7 +58,6 @@ BEGIN
 
     -- Return the paginated courses along with the total count
     RETURN QUERY
-    
     SELECT
         c.id AS course_id,
         c.title,
@@ -78,10 +80,11 @@ BEGIN
     LEFT JOIN
         course_courseenrollment ce ON c.id = ce.fk_course_id
     WHERE
-        c.is_active = TRUE
+        c.is_active = filter_is_active
         AND (filter_title IS NULL OR c.title ILIKE '%' || filter_title || '%')
         AND (filter_mode IS NULL OR c.mode ILIKE '%' || filter_mode || '%')
         AND (filter_is_paid IS NULL OR c.is_paid = filter_is_paid)
+        AND (filter_owner_id IS NULL OR c.fk_owner_id = filter_owner_id)
         AND (
             search_query IS NULL
             OR c.title ILIKE '%' || search_query || '%'
@@ -89,24 +92,22 @@ BEGIN
         )
     GROUP BY
         c.id, u.first_name, u.last_name
-    
     ORDER BY
-		CASE WHEN sort_direction = 'ASC' AND sort_field = 'course_id' THEN c.id END ASC,
-		CASE WHEN sort_direction = 'DESC' AND sort_field = 'course_id' THEN c.id END DESC,
-		CASE WHEN sort_direction = 'ASC' AND sort_field = 'title' THEN c.title END ASC,
-		CASE WHEN sort_direction = 'DESC' AND sort_field = 'title' THEN c.title END DESC,
-		CASE WHEN sort_direction = 'ASC' AND sort_field = 'price' THEN c.price END ASC,
-		CASE WHEN sort_direction = 'DESC' AND sort_field = 'price' THEN c.price END DESC,
-		CASE WHEN sort_direction = 'ASC' AND sort_field = 'avg_rating' THEN c.avg_rating END ASC,
-		CASE WHEN sort_direction = 'DESC' AND sort_field = 'avg_rating' THEN c.avg_rating END DESC,
-		CASE WHEN sort_direction = 'ASC' AND sort_field = 'created_at' THEN c.created_at END ASC,
-		CASE WHEN sort_direction = 'DESC' AND sort_field = 'created_at' THEN c.created_at END DESC,
-		CASE WHEN sort_direction = 'ASC' AND sort_field = 'updated_at' THEN c.updated_at END ASC,
-		CASE WHEN sort_direction = 'DESC' AND sort_field = 'updated_at' THEN c.updated_at END DESC,
-		CASE WHEN sort_direction = 'ASC' AND sort_field = 'enrollment_count' THEN enrollment_count END ASC,
-		CASE WHEN sort_direction = 'DESC' AND sort_field = 'enrollment_count' THEN enrollment_count END DESC,
-		CASE WHEN (sort_direction = '' OR sort_direction IS NULL) AND (sort_field = '' OR sort_field IS NULL) THEN c.created_at END DESC
-		
+        CASE WHEN sort_direction = 'ASC' AND sort_field = 'course_id' THEN c.id END ASC,
+        CASE WHEN sort_direction = 'DESC' AND sort_field = 'course_id' THEN c.id END DESC,
+        CASE WHEN sort_direction = 'ASC' AND sort_field = 'title' THEN c.title END ASC,
+        CASE WHEN sort_direction = 'DESC' AND sort_field = 'title' THEN c.title END DESC,
+        CASE WHEN sort_direction = 'ASC' AND sort_field = 'price' THEN c.price END ASC,
+        CASE WHEN sort_direction = 'DESC' AND sort_field = 'price' THEN c.price END DESC,
+        CASE WHEN sort_direction = 'ASC' AND sort_field = 'avg_rating' THEN c.avg_rating END ASC,
+        CASE WHEN sort_direction = 'DESC' AND sort_field = 'avg_rating' THEN c.avg_rating END DESC,
+        CASE WHEN sort_direction = 'ASC' AND sort_field = 'created_at' THEN c.created_at END ASC,
+        CASE WHEN sort_direction = 'DESC' AND sort_field = 'created_at' THEN c.created_at END DESC,
+        CASE WHEN sort_direction = 'ASC' AND sort_field = 'updated_at' THEN c.updated_at END ASC,
+        CASE WHEN sort_direction = 'DESC' AND sort_field = 'updated_at' THEN c.updated_at END DESC,
+        CASE WHEN sort_direction = 'ASC' AND sort_field = 'enrollment_count' THEN COUNT(ce.id) END ASC,
+        CASE WHEN sort_direction = 'DESC' AND sort_field = 'enrollment_count' THEN COUNT(ce.id) END DESC,
+        CASE WHEN (sort_direction = '' OR sort_direction IS NULL) AND (sort_field = '' OR sort_field IS NULL) THEN c.created_at END DESC
     LIMIT page_size OFFSET (page_num - 1) * page_size;
 END;
 $$ LANGUAGE plpgsql;

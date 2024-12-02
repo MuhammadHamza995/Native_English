@@ -299,6 +299,13 @@ GET_ADMIN_COURSE_LIST_SCHEMA = {
             type=OpenApiTypes.BOOL,
         ),
         OpenApiParameter(
+            name="is_active",
+            location=OpenApiParameter.QUERY,
+            description="Filter by active status, true or false (optional)",
+            required=False,
+            type=OpenApiTypes.BOOL,
+        ),
+        OpenApiParameter(
             name="mode",
             location=OpenApiParameter.QUERY,
             description="Mode - Self-paced, online",
@@ -330,7 +337,13 @@ GET_ADMIN_COURSE_LIST_SCHEMA = {
             type=OpenApiTypes.STR,  # You should use STR since it's a textual value
             enum=['DESC', 'ASC']
         ),
-        
+        OpenApiParameter(
+            name="filter_owner_id",
+            location=OpenApiParameter.QUERY,
+            description="Course Owner - Will return the courses of specific owner / teacher",
+            required=False,
+            type=OpenApiTypes.INT,
+        )
     ],
     'responses': {
         200: OpenApiResponse(

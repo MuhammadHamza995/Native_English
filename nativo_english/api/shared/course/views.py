@@ -119,7 +119,7 @@ def update_course(course_id, data):
         raise ex
 
 
-def get_all_courses_with_pagination(page_num, page_size, title, mode, is_paid, search_query, sort_field, sort_order):
+def get_all_courses_with_pagination(page_num, page_size, title, mode, is_paid, is_active, search_query, sort_field, sort_order, owner_id):
     """
     Retrieves a list of Course instances, optionally filtered by name or payment status.
 
@@ -140,10 +140,10 @@ def get_all_courses_with_pagination(page_num, page_size, title, mode, is_paid, s
     """
     try:
         all_courses_results = call_plpgsql_function('courses_list_with_pagination_get', 
-            page_num, page_size, title, mode, is_paid, search_query, sort_field, sort_order
+            page_num, page_size, title, mode, is_paid, is_active, search_query, sort_field, sort_order, owner_id
         )
 
-        print(page_num, page_size, title, mode, is_paid, search_query, sort_field, sort_order)
+        
         # Prepare the response
         courses_data = [
             {
