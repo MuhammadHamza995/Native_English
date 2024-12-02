@@ -9,7 +9,7 @@ from nativo_english.api.shared.db_helper import call_plpgsql_function
 
 #--------- COURSE --------------
 
-def create_course(data):
+def create_course(request):
 
     """
     Creates a new Course instance from the provided data.
@@ -25,9 +25,9 @@ def create_course(data):
     """
 
     try:
-        serializer = CourseSerializer(data=data)
+        serializer = CourseSerializer(data=request.data)
         if serializer.is_valid():
-            course = serializer.save()
+            course = serializer.save(created_by=request.user, modified_by=request.user)
             return CourseSerializer(course).data
         return serializer.errors 
     
@@ -88,7 +88,7 @@ def get_course_by_id(course_id):
     except Exception as ex:
         raise ex
 
-def update_course(course_id, data):
+def update_course(course_id, request):
 
     """
     Updates an existing Course instance with the provided data.
@@ -109,9 +109,9 @@ def update_course(course_id, data):
 
     try:
         course = get_object_or_404(Course, id=course_id)
-        serializer = CourseSerializer(course, data=data, partial=True)
+        serializer = CourseSerializer(course, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(modified_by=request.user)
             return serializer.data
         return serializer.errors 
     
@@ -142,7 +142,7 @@ def get_all_courses_with_pagination(page_num, page_size, title, mode, is_paid, i
         all_courses_results = call_plpgsql_function('courses_list_with_pagination_get', 
             page_num, page_size, title, mode, is_paid, is_active, search_query, sort_field, sort_order, owner_id
         )
-        
+
         # Prepare the response
         courses_data = [
             {
@@ -178,6 +178,47 @@ def get_all_courses_with_pagination(page_num, page_size, title, mode, is_paid, i
         # return all_courses_results
         return response_data
     
+    except Exception as ex:
+        raise ex
+
+
+def get_course_detail_by_id(course_id, owner_id=None):
+    """
+    Retrieves a Course instance by its ID.
+
+    Fetches a single Course instance matching the provided course ID.
+    Raises a 404 error if the course does not exist.
+
+    Args:
+        course_id (int): The unique identifier of the course.
+
+    Returns:
+        dict: Serialized course data if the course exists.
+
+    """
+    
+    try:
+        course_details = call_plpgsql_function('course_detail_by_id_get', course_id, owner_id)
+        response_data = {
+                'course_id': course_details[0]['course_id'],
+                'title': course_details[0]['title'],
+                'description': course_details[0]['description'],
+                'is_paid': course_details[0]['is_paid'],
+                'price': course_details[0]['price'],
+                'mode': course_details[0]['mode'],
+                'avg_rating': course_details[0]['avg_rating'],
+                'is_active': course_details[0]['is_active'],
+                'owner_name': course_details[0]['owner_name'],
+                'enrollment_count': course_details[0]['enrollment_count'],
+                'created_at': course_details[0]['created_at'],
+                'created_by': course_details[0]['created_by_name'],
+                'updated_at': course_details[0]['updated_at'],
+                'modified_by': course_details[0]['updated_by_name'],
+
+        }
+
+        return response_data
+        
     except Exception as ex:
         raise ex
 

@@ -14,7 +14,7 @@ from .permissions import IsAdminUserRole
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
 from nativo_english.api.shared.utils import api_response
-from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id, get_all_course_sections, get_course_section_by_id, get_all_courses_with_pagination, update_course_section, create_course_section, create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson
+from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id, get_all_course_sections, get_course_section_by_id, get_all_courses_with_pagination, get_course_detail_by_id, update_course_section, create_course_section, create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson
 from nativo_english.api.shared.utils import api_response
 from .swagger_schema import GET_USER_LIST_SCHEMA, POST_USER_SCHEMA , GET_USER_BY_ID_SCHEMA , UPDATE_USER_BY_ID_SCHEMA, UPDATE_USER_ROLE_SCHEMA, UPDATE_USER_STATUS_SCHEMA, GET_ADMIN_COURSE_LIST_SCHEMA, POST_ADMIN_COURSE_CREATE_SCHEMA, GET_ADMIN_COURSE_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_UPDATE_SCHEMA, GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA, GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA, POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA, GET_ADMIN_COURSE_ALL_SECTION_SCHEMA, POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA, GET_ADMIN_COURSE_SECTION_DETAIL_BY_ID_SCHEMA, UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA
 
@@ -237,7 +237,7 @@ class AdminCourseListCreateView(APIView):
     @extend_schema(**POST_ADMIN_COURSE_CREATE_SCHEMA)
     def post(self, request, *args, **kwargs):
     # Create the course using provided data
-      result = create_course(request.data)
+      result = create_course(request)
 
     # Check for errors in the result
       if "error" in result or "non_field_errors" in result:
@@ -260,13 +260,13 @@ class AdminCourseRetrieveUpdateView(APIView):
 
     @extend_schema(**GET_ADMIN_COURSE_RETRIEVE_SCHEMA)
     def get(self, request, id, *args, **kwargs):
-        course_data = get_course_by_id(id)
+        course_data = get_course_detail_by_id(id)
         return api_response(status.HTTP_200_OK, messages.COURSE_RETRIEVED_SUCCESS_MESSAGE, course_data)
 
     @extend_schema(**UPDATE_ADMIN_COURSE_UPDATE_SCHEMA)
     def put(self, request, id=None, *args, **kwargs):
     # Update the course using provided ID and data
-     result = update_course(id, request.data)
+     result = update_course(id, request)
 
     # Check for validation or non-field errors
      if "error" in result or "non_field_errors" in result:
