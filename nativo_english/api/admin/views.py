@@ -7,9 +7,13 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
 from .serializer import AdminUserSerializer
 from nativo_english.api.shared.course.serializer import CourseSerializer, CourseSectionSerializer, CourseLessonSerializer
 from nativo_english.api.shared.user.models import User
+from nativo_english.api.shared.course.models import LessonContent
+from nativo_english.api.shared.course.serializer import LessonContentSerializer
 from .permissions import IsAdminUserRole
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
@@ -29,7 +33,8 @@ from .swagger_schema import (
     GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA, POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA, 
     GET_ADMIN_COURSE_ALL_SECTION_SCHEMA, POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA, 
     GET_ADMIN_COURSE_SECTION_DETAIL_BY_ID_SCHEMA, UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA,
-    GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA)
+    GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA,
+    POST_ADMIN_COURSE_SECTION_LESSON_CONTENT_SCHEMA)
 
 # -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
@@ -456,3 +461,34 @@ class AdminCourseLessonContentListCreateView(APIView):
     def get(self, request, lesson_id, *args, **kwargs):
         
         return
+    
+    @extend_schema(request=POST_ADMIN_COURSE_SECTION_LESSON_CONTENT_SCHEMA)
+    @api_view(['POST'])
+    def post(request, course_id):
+    # """
+    # Creates a new lesson content for the specified course section.
+    # Accessible only to admin users.
+    # """
+     if not request.user.is_staff:  # Check if the user is an admin
+        return Response(
+            {"message": "You do not have permission to perform this action."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    # Handle the data
+     data = request.data
+     data['course'] = course_id  # Associate with the specified course
+
+    # Initialize the serializer with the incoming data
+     serializer = LessonContentSerializer(data=data)
+    
+    # Check if the serializer is valid
+     if serializer.is_valid():
+        serializer.save()
+        return Response(
+            {'status': 201, 'message': 'Lesson content created successfully.', 'data': serializer.data},
+            status=status.HTTP_201_CREATED
+        )
+
+     # If data is invalid, return errors
+     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

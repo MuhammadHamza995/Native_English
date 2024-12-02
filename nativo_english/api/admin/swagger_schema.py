@@ -675,3 +675,25 @@ GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA = {
     'operation_id': 'get_lesson_content_list',
     'description': 'Lists all lesson content'
 }
+# ---------------------------------------------
+
+
+# ---------------------------------------------
+# Post the content for course lesson
+# ---------------------------------------------
+# Example schema definition (replace with your actual schema)
+POST_ADMIN_COURSE_SECTION_LESSON_CONTENT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "content_title": {"type": "string"},
+        "content_type": {"type": "string", "enum": ["text", "audio", "video", "image"]},
+        "content_text": {"type": "string", "nullable": True},
+        "content_video_url": {"type": "string", "format": "uri", "nullable": True},
+        "content_audio_url": {"type": "string", "format": "uri", "nullable": True},
+        "content_image_url": {"type": "string", "format": "uri", "nullable": True},
+        "file": {"type": "string", "format": "binary", "nullable": True},  # Handle file upload if applicable
+    },
+    "required": ["content_title", "content_type"]
+}
+
+

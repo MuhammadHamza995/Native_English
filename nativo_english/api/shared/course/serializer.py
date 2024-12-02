@@ -22,6 +22,8 @@ class CourseLessonSerializer(serializers.ModelSerializer):
         
 
 class LessonContentSerializer(serializers.ModelSerializer):
+    file = serializers.FileField(required=False)  # Handle optional file uploads
+
     class Meta:
         model = LessonContent
         fields = '__all__'
@@ -37,5 +39,9 @@ class LessonContentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Audio content must include 'content_audio_url'.")
         if content_type == 'image' and not data.get('content_image_url'):
             raise serializers.ValidationError("Image content must include 'content_image_url'.")
-        
+
+        # Handle file validation
+        if 'file' in data and not data.get('content_video_url') and not data.get('content_image_url'):
+            raise serializers.ValidationError("If a file is provided, either content_video_url or content_image_url should be included.")
+
         return data
