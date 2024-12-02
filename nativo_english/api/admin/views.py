@@ -300,7 +300,14 @@ class AdminCourseRetrieveUpdateView(APIView):
 
     @extend_schema(**UPDATE_ADMIN_COURSE_UPDATE_SCHEMA)
     def put(self, request, id=None, *args, **kwargs):
-    # Check if the course exists by ID
+    # Check if the ID parameter is provided
+     if not id:
+        return Response({
+            'status': status.HTTP_400_BAD_REQUEST,
+            'message': messages.ID_REQUIRED_MESSAGE,
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Try to retrieve the course by ID
      try:
         course = Course.objects.get(id=id)
      except Course.DoesNotExist:
@@ -309,9 +316,8 @@ class AdminCourseRetrieveUpdateView(APIView):
             'message': messages.COURSE_NOT_FOUND_MESSAGE,
         }, status=status.HTTP_404_NOT_FOUND)
     
-    # Serialize the data and validate it
+    # Serialize and validate input data
      serializer = CourseSerializer(course, data=request.data, partial=True)
-    
      if serializer.is_valid():
         # Save the updated course
         updated_course = serializer.save()
@@ -320,18 +326,19 @@ class AdminCourseRetrieveUpdateView(APIView):
             'message': messages.COURSE_UPDATED_SUCCESS_MESSAGE,
             'data': CourseSerializer(updated_course).data,
         }, status=status.HTTP_200_OK)
-    
-    # If serializer is invalid, return validation errors
+
+    # Handle validation errors for specific fields
      error_details = serializer.errors
-    
-    # Handle specific parameter errors and return appropriate response
+
+    # Title validation error
      if 'title' in error_details:
         return Response({
             'status': status.HTTP_400_BAD_REQUEST,
-            'message':messages.TITLE_REQUIRED_MESSAGE,
+            'message': messages.TITLE_REQUIRED_MESSAGE,
             'errors': error_details['title'],
         }, status=status.HTTP_400_BAD_REQUEST)
-    
+
+    # Description validation error
      if 'description' in error_details:
         return Response({
             'status': status.HTTP_400_BAD_REQUEST,
@@ -339,12 +346,31 @@ class AdminCourseRetrieveUpdateView(APIView):
             'errors': error_details['description'],
         }, status=status.HTTP_400_BAD_REQUEST)
 
-     # If any other field has errors, return a general validation error
+    # Handle errors for other fields dynamically
+     field_errors = {
+        field: {
+            'status': status.HTTP_400_BAD_REQUEST,
+            'message': messages.INVALID_FIELD_MESSAGE.format(field=field),
+            'errors': error,
+        }
+        for field, error in error_details.items()
+        if field not in ['title', 'description']
+     }
+
+     if field_errors:
+        return Response({
+            'status': status.HTTP_400_BAD_REQUEST,
+            'message': messages.INVALID_FIELDS_MESSAGE,
+            'errors': field_errors,
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # If no specific field errors are matched, return a general error
      return Response({
         'status': status.HTTP_400_BAD_REQUEST,
         'message': messages.INVALID_DATA_MESSAGE,
         'errors': error_details,
      }, status=status.HTTP_400_BAD_REQUEST)
+
 # -----------------------------------------
 
 # -----------------------------------------
