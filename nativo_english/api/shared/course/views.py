@@ -142,7 +142,6 @@ def get_all_courses_with_pagination(page_num, page_size, title, mode, is_paid, i
         all_courses_results = call_plpgsql_function('courses_list_with_pagination_get', 
             page_num, page_size, title, mode, is_paid, is_active, search_query, sort_field, sort_order, owner_id
         )
-
         
         # Prepare the response
         courses_data = [
@@ -158,6 +157,10 @@ def get_all_courses_with_pagination(page_num, page_size, title, mode, is_paid, i
                 'owner_name': row['owner_name'],
                 'owner': row['owner'],
                 'enrollment_count': row['enrollment_count'],
+                'created_at': row['created_at'],
+                'updated_at': row['updated_at'],
+                'modified_by': row['updated_by_name'],
+
             }
             for row in all_courses_results
         ]     
