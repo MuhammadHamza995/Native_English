@@ -9,12 +9,11 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
+from nativo_english.api.admin.models import Course,CourseSection,CourseLesson
 from .serializer import AdminUserSerializer
 from nativo_english.api.shared.course.serializer import CourseSerializer, CourseSectionSerializer, CourseLessonSerializer
-from .serializer import AdminUserSerializer
-from nativo_english.api.shared.course.serializer import CourseSerializer, CourseSectionSerializer, CourseLessonSerializer
+from .serializer import AdminUserSerializer,UserSerializer
 from nativo_english.api.shared.user.models import User
 from .permissions import IsAdminUserRole
 from django.shortcuts import get_object_or_404
@@ -23,7 +22,6 @@ from rest_framework.exceptions import NotFound
 from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id, get_all_course_sections, get_course_section_by_id, update_course_section, create_course_section, create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson
 from nativo_english.api.shared.utils import api_response, api_exception_handler
 from rest_framework.exceptions import NotFound
-from nativo_english.api.shared.course.views import get_all_courses, create_course, update_course, get_course_by_id, get_all_course_sections, get_course_section_by_id, update_course_section, create_course_section, create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson
 import json
 from django.contrib.auth.hashers import make_password
 from .swagger_schema import GET_USER_LIST_SCHEMA, POST_USER_SCHEMA , GET_USER_BY_ID_SCHEMA , UPDATE_USER_BY_ID_SCHEMA, UPDATE_USER_ROLE_SCHEMA, UPDATE_USER_STATUS_SCHEMA, GET_ADMIN_COURSE_LIST_SCHEMA, POST_ADMIN_COURSE_CREATE_SCHEMA, GET_ADMIN_COURSE_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_UPDATE_SCHEMA, GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA, UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA, GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA, POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA, GET_ADMIN_COURSE_ALL_SECTION_SCHEMA, POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA, GET_ADMIN_COURSE_SECTION_DETAIL_BY_ID_SCHEMA, UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA
@@ -128,19 +126,34 @@ class AdminUserRetrieveUpdateView(APIView):
 
             return api_response(status.HTTP_200_OK, messages.USER_RETRIEVED_SUCCESS_MESSAGE, response_data)
                 
-    @extend_schema(**UPDATE_USER_BY_ID_SCHEMA)  # Extending the schema with the updated schema
+    @extend_schema(**UPDATE_USER_BY_ID_SCHEMA)
     def put(self, request, id=None, *args, **kwargs):
         # Ensure the user exists
-        user = get_object_or_404(User, id=id)
-        
+        try:
+            user = get_object_or_404(User, id=id)
+        except Exception as e:
+            return api_response(status.HTTP_404_NOT_FOUND, {"detail": "User not found."})
+
         # Update the user instance with partial data
         serializer = UserSerializer(user, data=request.data, partial=True)
 
         if serializer.is_valid():
-            serializer.save()
-            return api_response(status.HTTP_200_OK, messages.USER_UPDATED_SUCCESS_MESSAGE)
+            try:
+                serializer.save()
+                return api_response(
+                    status.HTTP_200_OK,
+                    {"status": 200, "message": "User updated successfully."}
+                )
+            except Exception as save_error:
+                return api_response(
+                    status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    {"detail": str(save_error)}
+                )
 
-        return api_response(status.HTTP_400_BAD_REQUEST, serializer.errors)
+        return api_response(
+            status.HTTP_400_BAD_REQUEST,
+            {"errors": serializer.errors}
+        )
  
 # -----------------------------------------
 
@@ -249,16 +262,25 @@ class AdminCourseListCreateView(APIView):
 
     @extend_schema(**POST_ADMIN_COURSE_CREATE_SCHEMA)
     def post(self, request, *args, **kwargs):
-    # Create the course using provided data
-      result = create_course(request.data)
+        # Create the course using provided data
+        serializer = CourseSerializer(data=request.data)
 
-    # Check for errors in the result
-      if "error" in result or "non_field_errors" in result:
-        return api_response(status.HTTP_400_BAD_REQUEST, messages.COURSE_CREATE_ERROR_MESSAGE, result)
-    
-    # Return success message
-      return api_response(status.HTTP_201_CREATED, messages.COURSE_CREATED_SUCCESS_MESSAGE, result)
-
+        # Check if the serializer is valid
+        if serializer.is_valid():
+            # Save the course and return success response
+            course = serializer.save()
+            return Response({
+                'status': status.HTTP_201_CREATED,
+                'message': messages.COURSE_CREATED_SUCCESS_MESSAGE,
+                'data': CourseSerializer(course).data
+            }, status=status.HTTP_201_CREATED)
+        
+        # Return error response if the serializer is invalid
+        return Response({
+            'status': status.HTTP_400_BAD_REQUEST,
+            'message': messages.INVALID_DATA_MESSAGE,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 # -----------------------------------------
 
 # -----------------------------------------
@@ -278,15 +300,51 @@ class AdminCourseRetrieveUpdateView(APIView):
 
     @extend_schema(**UPDATE_ADMIN_COURSE_UPDATE_SCHEMA)
     def put(self, request, id=None, *args, **kwargs):
-    # Update the course using provided ID and data
-     result = update_course(id, request.data)
+    # Check if the course exists by ID
+     try:
+        course = Course.objects.get(id=id)
+     except Course.DoesNotExist:
+        return Response({
+            'status': status.HTTP_404_NOT_FOUND,
+            'message': messages.COURSE_NOT_FOUND_MESSAGE,
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Serialize the data and validate it
+     serializer = CourseSerializer(course, data=request.data, partial=True)
+    
+     if serializer.is_valid():
+        # Save the updated course
+        updated_course = serializer.save()
+        return Response({
+            'status': status.HTTP_200_OK,
+            'message': messages.COURSE_UPDATED_SUCCESS_MESSAGE,
+            'data': CourseSerializer(updated_course).data,
+        }, status=status.HTTP_200_OK)
+    
+    # If serializer is invalid, return validation errors
+     error_details = serializer.errors
+    
+    # Handle specific parameter errors and return appropriate response
+     if 'title' in error_details:
+        return Response({
+            'status': status.HTTP_400_BAD_REQUEST,
+            'message':messages.TITLE_REQUIRED_MESSAGE,
+            'errors': error_details['title'],
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+     if 'description' in error_details:
+        return Response({
+            'status': status.HTTP_400_BAD_REQUEST,
+            'message': messages.DESCRIPTION_REQUIRED_MESSAGE,
+            'errors': error_details['description'],
+        }, status=status.HTTP_400_BAD_REQUEST)
 
-    # Check for validation or non-field errors
-     if "error" in result or "non_field_errors" in result:
-        return api_response(status.HTTP_400_BAD_REQUEST, messages.BAD_REQUEST_ERROR_MESSAGE + str(result))
-
-    # Return success message
-     return api_response(status.HTTP_200_OK, messages.COURSE_UPDATED_MESSAGE, result)
+     # If any other field has errors, return a general validation error
+     return Response({
+        'status': status.HTTP_400_BAD_REQUEST,
+        'message': messages.INVALID_DATA_MESSAGE,
+        'errors': error_details,
+     }, status=status.HTTP_400_BAD_REQUEST)
 # -----------------------------------------
 
 # -----------------------------------------
@@ -367,23 +425,40 @@ class AdminCourseSectionRetrieveUpdateView(APIView):
 
     @extend_schema(**UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA)
     def put(self, request, course_section_id=None, *args, **kwargs):
-        # Perform the update operation
-        result = update_course_section(course_section_id, request.data)
+    # Ensure course_section_id is provided and valid
+     if not course_section_id:
+        return Response({
+            'status': status.HTTP_400_BAD_REQUEST,
+            'message': 'Course Section ID is required.'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Handle validation or update errors
-        if "error" in result or "non_field_errors" in result:
-            return api_response(
-                status.HTTP_400_BAD_REQUEST,
-                messages.sBAD_REQUEST_ERROR_MESSAGE,
-                result
-            )
+    # Retrieve the course section by ID
+     try:
+        course_section = CourseSection.objects.get(id=course_section_id)
+     except CourseSection.DoesNotExist:
+        return Response({
+            'status': status.HTTP_404_NOT_FOUND,
+            'message': 'Course section with the given ID does not exist.'
+        }, status=status.HTTP_404_NOT_FOUND)
 
-        # Return a successful response
-        return api_response(
-            status.HTTP_200_OK,
-            messages.COURSE_SECTION_UPDATED_SUCCESS_MESSAGE,
-            result
-        )
+    # Serialize the data and validate it
+     serializer = CourseSectionSerializer(course_section, data=request.data, partial=True)
+
+    # If serializer is valid, update and save the course section
+     if serializer.is_valid():
+        updated_course_section = serializer.save()
+        return Response({
+            'status': status.HTTP_200_OK,
+            'message': messages.COURSE_SECTION_UPDATED_SUCCESS_MESSAGE,
+            'data': CourseSectionSerializer(updated_course_section).data,
+        }, status=status.HTTP_200_OK)
+    
+    # If serializer is invalid, return validation errors
+     return Response({
+        'status': status.HTTP_400_BAD_REQUEST,
+        'message': 'Validation Error',
+        'errors': serializer.errors,
+     }, status=status.HTTP_400_BAD_REQUEST)
 # -----------------------------------------
 
 # -----------------------------------------
@@ -458,10 +533,51 @@ class AdminCourseLessonRetrieveUpdateView(APIView):
 
     @extend_schema(**UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA)
     def put(self, request, course_lesson_id=None, *args, **kwargs):
+     try:
+        # Check if the course lesson exists
+        course_lesson = CourseLesson.objects.get(id=course_lesson_id)  # Assuming CourseLesson is the model
+     except CourseLesson.DoesNotExist:
+        return api_response(status.HTTP_404_NOT_FOUND, "Course lesson not found.")
+    
+    # If course lesson exists, proceed to validation
+     serializer = CourseLessonSerializer(course_lesson, data=request.data, partial=True)
+
+     if serializer.is_valid():
+        # Perform the update operation if data is valid
         result = update_course_lesson(course_lesson_id, request.data)
 
+        # Handle validation or update errors
         if "error" in result or "non_field_errors" in result:
-            return api_response(status.HTTP_400_BAD_REQUEST, messages.BAD_REQUEST_ERROR_MESSAGE, result)
+            return api_response(
+                status.HTTP_400_BAD_REQUEST,
+                messages.BAD_REQUEST_ERROR_MESSAGE,
+                result
+            )
         
-        return api_response(status.HTTP_200_OK, messages.COURSE_LESSON_UPDATED_SUCCESS_MESSAGE, result)
+        # Return a successful response
+        return api_response(
+            status.HTTP_200_OK,
+            messages.COURSE_LESSON_UPDATED_SUCCESS_MESSAGE,
+            result
+        )
+
+    # Handle validation errors and return them in the response
+     error_details = serializer.errors
+
+    # Checking specific errors related to the parameters
+     if 'course' in error_details:
+        return api_response(status.HTTP_400_BAD_REQUEST, messages.INVALID_COURSE_PARAMETER_MESSAGE, error_details['course'])
+    
+     if 'title' in error_details:
+        return api_response(status.HTTP_400_BAD_REQUEST,messages.TITLE_REQUIRED_MESSAGE, error_details['title'])
+    
+     if 'description' in error_details:
+        return api_response(status.HTTP_400_BAD_REQUEST, messages.DESCRIPTION_REQUIRED_MESSAGE, error_details['description'])
+
+    # If any error occurs, return general validation error
+     return api_response(
+        status.HTTP_400_BAD_REQUEST,
+        messages.VALIDATION_ERROR_MESSAGE ,
+        error_details
+     )
 # -----------------------------------------

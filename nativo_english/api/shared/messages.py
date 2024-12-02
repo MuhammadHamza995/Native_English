@@ -20,6 +20,7 @@ LESSON_CREATION_ERROR_MESSAGE = 'Error creating course lesson'
 PERMISSION_DENIED_MESSAGE = "You do not have permission to perform this action."
 INVALID_ACTION_MESSAGE = "Invalid action. Must be 'activate' or 'suspend'."
 
+COURSE_RETRIEVED_BY_ID_ERROR_MESSAGE='Course section with the given ID does not exist.'
 COURSE_CREATED_SUCCESS_MESSAGE = 'Course created successfully'
 COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE = 'Course List Retrieved Successfully'
 COURSE_RETRIEVED_SUCCESS_MESSAGE = 'Course retrieved successfully'
@@ -42,6 +43,7 @@ COURSE_LESSON_RETRIEVED_SUCCESS_MESSAGE = 'Course lesson retrieved successfully'
 COURSE_LESSON_UPDATED_SUCCESS_MESSAGE = 'Course lesson updated successfully'
 LESSON_NOT_FOUND_MESSAGE = 'Lesson Not Found'
 ACTIVATE_SUSPEND_INVALID_ACTION_MESSAGE = 'Invalid Action. Must be activate or suspend'
+INVALID_DATA_MESSAGE ='Invalid data'
 COURSE_CREATE_ERROR_MESSAGE = 'Error creating course'
 
 SECTION_NOT_FOUND_MESSAGE = 'Section Not Found'
@@ -50,4 +52,7 @@ LESSON_LIST_RETRIEVED_SUCCESS_MESSAGE = 'Lesson List Retrieved successfully'
 COURSE_LESSON_RETRIEVED_SUCCESS_MESSAGE = 'Course lesson retrieved successfully'
 COURSE_LESSON_UPDATED_SUCCESS_MESSAGE = 'Course lesson updated successfully'
 LESSON_NOT_FOUND_MESSAGE = 'Lesson Not Found'
+DESCRIPTION_REQUIRED_MESSAGE= "Description is required."
+TITLE_REQUIRED_MESSAGE="Title is required."
+INVALID_COURSE_PARAMETER_MESSAGE= "Invalid course parameter."
 ACTIVATE_SUSPEND_INVALID_ACTION_MESSAGE = 'Invalid Action. Must be activate or suspend'

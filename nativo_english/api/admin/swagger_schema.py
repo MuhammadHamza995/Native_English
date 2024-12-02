@@ -150,7 +150,15 @@ UPDATE_USER_BY_ID_SCHEMA = {
             type=OpenApiTypes.INT,
         ),
     ],
-    
+    # 'request': {
+    #     'type': 'object',
+    #     'properties': {
+    #         'first_name': {'type': 'string', 'example': 'John'},
+    #         'last_name': {'type': 'string', 'example': 'Doe'},
+    #         'email': {'type': 'string', 'example': 'john.doe@example.com'},
+    #     },
+    #     'required': ['email'],  # Adjust based on your model constraints
+    # },
     'responses': {
         200: OpenApiResponse(
             description='User updated successfully',
@@ -167,7 +175,6 @@ UPDATE_USER_BY_ID_SCHEMA = {
         401: SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE['401'],
     },
 }
-
 UPDATE_USER_ROLE_SCHEMA = {
     'tags': ['Admin'],
     'summary': 'Update User Role (Admin role required)',
@@ -325,19 +332,6 @@ POST_ADMIN_COURSE_CREATE_SCHEMA = {
     'summary': 'Create a New Course (Admin access only)',
     'operation_id': 'create_new_course_by_admin',
     'description': 'Creates a new course by an Admin User. Requires course title, description, and paid status.',
-    # 'request': {
-    #     'application/json': {
-    #         'schema': {
-    #             'type': 'object',
-    #             'properties': {
-    #                 'title': {'type': 'string', 'description': 'Title of the course (required, max 100 characters)'},
-    #                 'is_paid': {'type': 'boolean', 'description': 'Whether the course is paid or free (required)'},
-    #                 'description': {'type': 'string', 'description': 'Detailed description of the course'},
-    #             },
-    #             'required': ['title', 'is_paid'],
-    #         }
-    #     }
-    # },
     'responses': {
         201: OpenApiResponse(
             description='Course successfully created',
@@ -360,7 +354,14 @@ POST_ADMIN_COURSE_CREATE_SCHEMA = {
         ),
         400: OpenApiResponse(
             description='Bad Request',
-            response={'type': 'object', 'properties': {'message': {'type': 'string', 'example': 'Invalid data'}}},
+            response={
+                'type': 'object',
+                'properties': {
+                    'status': {'type': 'integer', 'example': 400},
+                    'message': {'type': 'string', 'example': 'Invalid data'},
+                    'errors': {'type': 'object', 'example': {'title': ['This field is required.']}},
+                },
+            },
         ),
     },
 }
@@ -416,7 +417,6 @@ UPDATE_ADMIN_COURSE_UPDATE_SCHEMA = {
             type=OpenApiTypes.INT,  # Specify the type as INT
         ),
     ],
-    
     'responses': {
         200: OpenApiResponse(
             description='Course successfully updated',
@@ -424,19 +424,47 @@ UPDATE_ADMIN_COURSE_UPDATE_SCHEMA = {
                 'type': 'object',
                 'properties': {
                     'status': {'type': 'integer', 'example': 200},
-                    'id': {'type': 'integer'},
-                    'title': {'type': 'string'},
-                    'is_paid': {'type': 'boolean'},
-                    'description': {'type': 'string'},
+                    'message': {'type': 'string', 'example': 'Course successfully updated'},
+                    'data': {
+                        'type': 'object',
+                        'properties': {
+                            'id': {'type': 'integer', 'example': 101},
+                            'title': {'type': 'string', 'example': 'Advanced Python Programming'},
+                            'is_paid': {'type': 'boolean', 'example': True},
+                            'description': {'type': 'string', 'example': 'A comprehensive course on advanced Python concepts.'},
+                        },
+                    },
                 },
             },
         ),
         400: OpenApiResponse(
             description='Bad Request',
-            response={'type': 'object', 'properties': {'message': {'type': 'string', 'example': 'Invalid data'}}},
+            response={
+                'type': 'object',
+                'properties': {
+                    'status': {'type': 'integer', 'example': 400},
+                    'message': {'type': 'string', 'example': 'Invalid data'},
+                    'errors': {
+                        'type': 'object',
+                        'example': {'title': ['This field is required.']}
+                    },
+                },
+            },
+        ),
+        404: OpenApiResponse(
+            description='Course Not Found',
+            response={
+                'type': 'object',
+                'properties': {
+                    'status': {'type': 'integer', 'example': 404},
+                    'message': {'type': 'string', 'example': 'Course not found.'},
+                },
+            },
         ),
     },
 }
+
+
 # --------------------------------------------
 
 
@@ -557,15 +585,15 @@ UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA = {
     'summary': "Update Course Section by ID (Admin access only)",
     'operation_id': 'update_course_section_by_id',
     'description': 'Allows an admin user to update details of a course section by its ID.',
-    # 'request': {
-    #     'application/json': {
-    #         'example': {
-    #             'title': 'Updated Section Title',
-    #             'course_id': 101,
-    #             'description': 'Updated section description.',
-    #         }
-    #     }
-    # },
+    'parameters': [
+        OpenApiParameter(
+            name="course_section_id",
+            location="path",
+            description="Course Section ID",
+            required=True,
+            type=OpenApiTypes.INT,
+        ),
+    ],
     'responses': {
         200: OpenApiResponse(
             description="Course Section Updated Successfully",
@@ -606,6 +634,7 @@ UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA = {
         )
     }
 }
+
 
 # --------------------------------------------
 
@@ -734,7 +763,6 @@ POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA = {
         ),
     }
 }
-
 UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA = {
     'tags': ['AdminCourseLesson'],
     'summary': 'Update course lesson by ID (Admin access only)',
@@ -742,9 +770,9 @@ UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA = {
     'description': 'Updates a course lesson based on the provided ID and input data.',
     'parameters': [
         OpenApiParameter(
-            name="id",
+            name="course_lesson_id",
             location="path",  # Correct location for path parameters
-            description="Course ID",
+            description="Course Lesson ID",
             required=True,
             type=OpenApiTypes.INT,  # Specify the type as INT
         ),
@@ -752,7 +780,7 @@ UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA = {
     
     'responses': {
         200: OpenApiResponse(
-            description='Course successfully updated',
+            description='Course Lesson successfully updated',
             response={
                 'type': 'object',
                 'properties': {
@@ -765,9 +793,26 @@ UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA = {
             },
         ),
         400: OpenApiResponse(
-            description='Bad Request',
-            response={'type': 'object', 'properties': {'message': {'type': 'string', 'example': 'Invalid data'}}},
+            description='Bad Request - Validation Errors',
+            response={
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string', 'example': 'Invalid data'},
+                    'errors': {'type': 'object'}
+                },
+            },
+        ),
+        404: OpenApiResponse(
+            description='Course Lesson Not Found',
+            response={
+                'type': 'object',
+                'properties': {
+                    'status': {'type': 'integer', 'example': 404},
+                    'message': {'type': 'string', 'example': 'Course lesson not found.'},
+                },
+            },
         ),
     },
 }
+
 # --------------------------------------------
