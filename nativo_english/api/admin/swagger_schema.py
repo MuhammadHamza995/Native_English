@@ -683,70 +683,59 @@ GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA = {
 # Upload the course lesson content by Admin Schema 
 #-----------------------------------------------
 
+# schema.py
+
 POST_ADMIN_COURSE_LESSON_CONTENT_CREATE_SCHEMA = {
     'tags': ['AdminCourseSectionLessonContent'],
-    'summary': 'Upload Lesson Content (Admin access only)',
-    'operation_id': 'upload_lesson_content',
-    'description': 'Allows admin users to upload text, images, audio, or video content for course lessons.',
-    # 'parameters': {
-    #     'content_title': {
-    #         'type': 'string',
-    #         'example': 'Introduction to Python',
-    #         'description': 'Title of the lesson content.',
-    #     },
-    #     'lesson_content_position': {
-    #         'type': 'integer',
-    #         'example': 1,
-    #         'description': 'Position of the content in the lesson.',
-    #     },
-    #     'fk_course_lesson_id': {
-    #         'type': 'integer',
-    #         'example': 123,
-    #         'description': 'Foreign key of the associated course lesson.',
-    #     },
-    #     'content_type': {
-    #         'type': 'string',
-    #         'enum': ['text', 'audio', 'video', 'image'],
-    #         'description': 'Type of content being uploaded.',
-    #     },
-    #     'file': {
-    #         'type': 'string',
-    #         'format': 'binary',
-    #         'description': 'File to upload (applicable for audio, video, or image).',
-    #     },
-    # },
+    'summary': 'Create a new lesson content (Admin access only)',
+    'operation_id': 'create_lesson_content',
+    'description': 'Create a new lesson content for a course lesson, with optional text, audio, image, and file upload.',
+    'request': {
+        'multipart/form-data': {
+            'type': 'object',
+            'properties': {
+                'lesson_id': {
+                    'type': 'integer',
+                    'description': 'ID of the lesson the content belongs to',
+                    'example': 1
+                },
+                'content_file': {
+                    'type': 'string',
+                    'format': 'binary',
+                    'description': 'File to upload (image, audio, etc.)'
+                },
+                'text': {
+                    'type': 'string',
+                    'description': 'Text content for the lesson',
+                    'example': 'This is lesson text content.'
+                },
+                'audio': {
+                    'type': 'string',
+                    'description': 'URL of the audio file',
+                    'example': 'https://example.com/audio.mp3'
+                },
+                'image': {
+                    'type': 'string',
+                    'description': 'URL of the image',
+                    'example': 'https://example.com/image.png'
+                }
+            },
+            'required': ['lesson_id']
+        }
+    },
     'responses': {
         201: {
-            'description': 'Lesson content uploaded successfully.',
+            'description': 'Lesson content created successfully',
             'content': {
                 'application/json': {
-                    'example': {
-                        'message': 'Lesson content created successfully.',
-                        'data': {
-                            'id': 1,
-                            'content_title': 'Introduction to Python',
-                            'content_type': 'image',
-                            'file_url': '/media/uploads/sample_image.jpg',
-                        },
-                    },
-                },
-            },
-        },
-        400: {
-            'description': 'Validation Error',
-            'content': {
-                'application/json': {
-                    'example': {'error': 'Invalid content type.'},
-                },
-            },
-        },
-        403: {
-            'description': 'Unauthorized Access',
-            'content': {
-                'application/json': {
-                    'example': {'detail': 'You do not have permission to perform this action.'},
-                },
-            },
-        },
-    },
+                    'schema': {
+                        '$ref': '#/components/schemas/LessonContent'
+                    }
+                }
+            }
+        }
+    }
 }
+
+
+

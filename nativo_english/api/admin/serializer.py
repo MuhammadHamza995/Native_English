@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from rest_framework.exceptions import ValidationError
 from nativo_english.api.shared.user.models import User
+from nativo_english.api.shared.course.models import LessonContent
 
 # Admin User Serializer
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -18,6 +19,10 @@ class AdminUserSerializer(serializers.ModelSerializer):
         validated_data['password'] = make_password(validated_data['password'])
         return super().create(validated_data)
 
+class AdminCourseLessonContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LessonContent
+        fields = ['id', 'fk_course_lesson_id', 'content_file_url', 'content_text', 'content_audio_url', 'content_image_url']
     # def create(self, validated_data):
     #     # Apply password hashing
     #     if validated_data['password']:

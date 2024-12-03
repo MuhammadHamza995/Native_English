@@ -8,9 +8,11 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import PermissionDenied
-from .serializer import AdminUserSerializer
+from .serializer import AdminUserSerializer,AdminCourseLessonContentSerializer
 from nativo_english.api.shared.course.serializer import CourseSerializer, CourseSectionSerializer, CourseLessonSerializer
 from nativo_english.api.shared.user.models import User
+#from nativo_english.api.shared.course.serializer import AdminCourseLessonContentSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
 from .permissions import IsAdminUserRole
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound,ValidationError
@@ -456,6 +458,7 @@ class AdminCourseLessonRetrieveUpdateView(APIView):
 # -----------------------------------------
 class AdminCourseLessonContentListCreateView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUserRole]
+    parser_classes = [MultiPartParser, FormParser]
 
     @extend_schema(**GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA)
     def get(self, request, lesson_id, *args, **kwargs):
@@ -464,61 +467,35 @@ class AdminCourseLessonContentListCreateView(APIView):
     
 # upload course lesson content 
     
+    """
+    Admin API for creating lesson content (images, audio, text).
+    """
     @extend_schema(**POST_ADMIN_COURSE_LESSON_CONTENT_CREATE_SCHEMA)
     def post(self, request, *args, **kwargs):
-        # Ensure the user is an admin
-        if request.user.role != 'admin':
-            raise PermissionDenied("You do not have permission to perform this action.")
-        
-        # Extract data
-        content_type = request.data.get('content_type')
-        title = request.data.get('content_title')
-        position = request.data.get('lesson_content_position')
-        language = request.data.get('language')
-        file = request.FILES.get('file')  # Uploaded file
+     lesson_id = request.data.get("lesson_id")
+     if not lesson_id:
+        raise ValidationError({"lesson_id": "This field is required."})
 
-        # Validate content type
-        allowed_types = ['text', 'audio', 'video', 'image']
-        if content_type not in allowed_types:
-            return Response({"error": "Invalid content type."}, status=status.HTTP_400_BAD_REQUEST)
+     file = request.FILES.get("content_file")
+     if file:
+        try:
+            content_file_url = handle_file_upload(file)
+        except ValidationError as e:
+            raise ValidationError({"content_file": str(e)})
+     else:
+        content_file_url = None
 
-        # Handle file upload if applicable
-        file_url = None
-        if content_type in ['audio', 'video', 'image'] and file:
-            allowed_extensions = {
-                'audio': ['.mp3', '.wav'],
-                'video': ['.mp4', '.avi', '.mkv'],
-                'image': ['.jpg', '.jpeg', '.png', '.gif']
-            }
-            try:
-                file_url = handle_file_upload(file, allowed_extensions[content_type])
-            except ValidationError as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+     text = request.data.get("text", "")
+     audio = request.data.get("audio", "")
+     image = request.data.get("image", "")
 
-        # Create lesson content
-        lesson_content = LessonContent.objects.create(
-            content_title=title,
-            lesson_content_position=position,
-            fk_course_lesson_id_id=request.data.get('fk_course_lesson_id'),  # Assuming the lesson ID is passed
-            is_active=request.data.get('is_active', False),
-            language=language,
-            content_type=content_type,
-            content_text=request.data.get('content_text') if content_type == 'text' else None,
-            content_audio_url=file_url if content_type == 'audio' else None,
-            content_video_url=file_url if content_type == 'video' else None,
-            content_image_url=file_url if content_type == 'image' else None,
-            created_by=request.user
-        )
+     lesson_content = LessonContent.objects.create(
+        fk_course_lesson_id=lesson_id,
+        content_file_url=content_file_url,
+        content_text=text,
+        content_audio_url=audio,
+        content_image_url=image
+     )
 
-        return Response(
-            {
-                "message": "Lesson content created successfully.",
-                "data": {
-                    "id": lesson_content.id,
-                    "content_title": lesson_content.content_title,
-                    "content_type": lesson_content.content_type,
-                    "file_url": file_url,
-                }
-            },
-            status=status.HTTP_201_CREATED
-        )
+     serializer = AdminCourseLessonContentSerializer(lesson_content)
+     return Response(serializer.data, status=status.HTTP_201_CREATED)

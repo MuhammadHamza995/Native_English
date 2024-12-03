@@ -9,11 +9,9 @@ from .views import (
 urlpatterns = [
     path('users/', AdminUserListCreateView.as_view(), name='user-create-list'),
     path('users/<int:id>/', AdminUserRetrieveUpdateView.as_view(), name='user-detail'),
-
     path('users/<int:id>/role', AdminUserRoleUpdateView.as_view(), name='user-role-update'),
     path('users/<int:id>/<str:action>/', AdminUserActivateSuspendUpdateView.as_view(), name='activate-suspend-user'),
-    # path('users/<int:id>/suspend/', AdminUserActivateSuspendUpdateView.as_view() ,name='suspend-user'),
-
+    
     path('course/', AdminCourseListCreateView.as_view(), name='course-create-list'),
     path('course/<int:id>/', AdminCourseRetrieveUpdateView.as_view(), name='course-detail'),
 
@@ -23,6 +21,8 @@ urlpatterns = [
     path('course/section/lesson', AdminCourseLessonListCreateView.as_view(), name='course-lesson-create-list'),
     path('course/section/lesson/<int:course_lesson_id>/', AdminCourseLessonRetrieveUpdateView.as_view(), name='course-lesson-detail'),
 
+    # Keep only one endpoint for handling lesson content
     path('course/section/lesson/<int:lesson_id>/content/', AdminCourseLessonContentListCreateView.as_view(), name='course-section-lesson-content-create-list'),
-    path('lesson-content/', AdminCourseLessonContentListCreateView.as_view(), name='admin-lesson-content'),
 ]
+
+
