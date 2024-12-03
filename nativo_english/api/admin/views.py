@@ -104,12 +104,13 @@ class AdminUserListCreateView(APIView):
     @extend_schema(**POST_USER_SCHEMA)  # Extending the schema with the updated schema
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
+        
         if serializer.is_valid():
             user = serializer.save()
             response_serializer = self.serializer_class(user)
             return api_response(status.HTTP_201_CREATED, messages.USER_CREATED_SUCCESS_MESSAGE, response_serializer.data)
-
-        return api_response(status.HTTP_400_BAD_REQUEST, messages.BAD_REQUEST_ERROR_MESSAGE)
+        
+        return api_response(status.HTTP_400_BAD_REQUEST, serializer.errors)
 # -----------------------------------------
 
 
@@ -450,6 +451,7 @@ class AdminCourseLessonRetrieveUpdateView(APIView):
 # 2. Create New Course Lesson Content user request data (can only be access by Admin user rol --> POST /api/admin/course/lesson/{lesson_id}/content)
 # -----------------------------------------
 class AdminCourseLessonContentListCreateView(APIView):
+    serializer_class = CourseLessonSerializer
     permission_classes = [IsAuthenticated, IsAdminUserRole]
 
     @extend_schema(**GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA)

@@ -1,10 +1,8 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.contrib.auth import authenticate
-from nativo_english.api.shared.user.models import User
+from nativo_english.api.shared.user.models import User, UserPrefs, OTP, TempToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
-from nativo_english.api.shared.utils import api_exception_handler
 
 # Register Serializer
 class RegisterSerializer(serializers.ModelSerializer):
@@ -19,73 +17,32 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
     
 
-# # Login Serializer
-# class LoginSerializer(serializers.Serializer):
-#     username = serializers.CharField()
-#     password = serializers.CharField()
 
-#     def validate(self, attrs):
-#         user = authenticate(username=attrs['username'], password=attrs['password'])
-
-#         # Check for user
-#         if not user:
-#             raise serializers.ValidationError('Invalid credentials')
-        
-#         attrs['user'] = user
-#         return attrs
-    
-
-# Token Serializer
+# LoginSerializer
 class LoginSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        try:
-            # Generate the initial token
-            token = super().get_token(user)
-            
-            # Add custom claims to the access token only
-            token['role'] = user.role  # Assuming `role` is a field on your User model
-            token['email'] = user.email
-            token['username'] = user.username
-            
-            return token
-        
-        except Exception as ex:
-            raise ValidationError({
-                "detail": "An error occurred during login.",
-                'error': str(ex)
-                })
-    
     def validate(self, attrs):
-        try:
-            data = super().validate(attrs)
-            
-            # Get both refresh and access tokens
-            data['refresh'] = str(self.get_token(self.user))
-            data['access'] = str(self.get_token(self.user).access_token)
+        username = attrs.get('username')
+        password = attrs.get('password')
+        user = authenticate(username=username, password=password)
 
-            # # Custom payload with user information
-            # data['refresh'] = str(refresh)
-            # data['access'] = str(access)
-            # data['user'] = {
-            #     'id': self.user.id,
-            #     'username': self.user.username,
-            #     'email': self.user.email,
-            #     'role': self.user.role  # Assuming `role` is a field on your User model
-            # }
-            
-            return data
-        
-        except ValidationError as e:
-            print("---------------------------------")
-            print(str(e))
-            print("---------------------------------")
-            # Handle validation errors specifically
-            raise ValidationError({"detail": str(e)})
-        
-        except Exception as ex:
-            print(str(ex))          
-            raise ValidationError({
-                "detail": str(ex),
-                'error': str(ex)
-                })
+        if not user:
+            raise ValidationError({"detail": "Invalid credentials."})
+
+        return {"user": user}  # Return the user for further handling in the view
+
+class TwoFactorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserPrefs
+        fields = ['enable_2fa']
+
+    def update(self, instance, validated_data):
+        instance.enable_2fa = validated_data.get('enable_2fa', instance.enable_2fa)
+        if instance.enable_2fa and not instance.otp_secret_key:
+            instance.generate_otp_secret()  # Generate OTP secret key if enabling 2FA
+        instance.save()
+        return instance
+    
+class VerifyOTPSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OTP
+        fields = ['otp']
