@@ -11,11 +11,18 @@ class Course(models.Model):
         ('live', 'live'),
     ]
 
+    COURSE_LEVEL = [
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advance', 'Advance')
+    ]
+
     title = models.CharField(max_length=200)
     description = models.TextField()
     is_paid = models.BooleanField(default=False)
     price = models.FloatField(null=True)
     mode = models.CharField(choices=MODE_CHOICES, null=False)
+    level = models.CharField(choices=COURSE_LEVEL, null=False)
     avg_rating = models.FloatField(max_length=5, default=0.0)    
     is_active = models.BooleanField(default=False)
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, db_column='fk_owner_id')

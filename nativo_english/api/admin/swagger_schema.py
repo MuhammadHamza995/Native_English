@@ -315,6 +315,15 @@ GET_ADMIN_COURSE_LIST_SCHEMA = {
             default="",  # Optional, specify the default value
         ),
         OpenApiParameter(
+            name="level",
+            location=OpenApiParameter.QUERY,
+            description="Level - Difficulty level",
+            required=False,
+            type=OpenApiTypes.STR,  # You should use STR since it's a textual value
+            enum=["beginner", "intermediate", "advance"],  # These are the fixed values you want in the dropdown
+            default="",  # Optional, specify the default value
+        ),
+        OpenApiParameter(
             name="search",
             location=OpenApiParameter.QUERY,
             description="Search - Search for courses this will be helpful to integrate with search bar",
@@ -362,11 +371,15 @@ GET_ADMIN_COURSE_LIST_SCHEMA = {
                                 "is_paid": 'true',
                                 "price": 200,
                                 "mode": "self",
+                                "level": "beginner",
                                 "avg_rating": 0,
                                 "is_active": 'true',
                                 "owner_name": "John Cena",
                                 "owner": 2,
-                                "enrollment_count": 0
+                                "enrollment_count": 0,
+                                "created_at": "2024-12-01T21:56:24.916322Z",
+                                "updated_at": "2024-12-03T20:11:30.532890Z",
+                                "modified_by": "Nativo English Admin"
                                 }
                             ],
                         "total_count": 1,
@@ -506,13 +519,6 @@ GET_ADMIN_COURSE_ALL_SECTION_SCHEMA = {
             type=OpenApiTypes.STR
         ),
         OpenApiParameter(
-            name="course_id",
-            location=OpenApiParameter.QUERY,
-            description="ID of the course to retrieve associated sections (optional).",
-            required=False,
-            type=OpenApiTypes.INT
-        ),
-        OpenApiParameter(
             name="page",
             location=OpenApiParameter.QUERY,
             description="Page number for paginated results (optional).",
@@ -561,20 +567,6 @@ GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA = {
             type=OpenApiTypes.STR
         ),
         OpenApiParameter(
-            name="course_id",
-            location=OpenApiParameter.QUERY,
-            description="ID of the course to retrieve associated lessons (optional).",
-            required=False,
-            type=OpenApiTypes.INT
-        ),
-        OpenApiParameter(
-            name="section_id",
-            location=OpenApiParameter.QUERY,
-            description="ID of the section to retrieve associated lessons (optional).",
-            required=False,
-            type=OpenApiTypes.INT
-        ),
-        OpenApiParameter(
             name="page",
             location=OpenApiParameter.QUERY,
             description="Page number for paginated results (optional).",
@@ -589,15 +581,6 @@ GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA = {
     'summary': 'Retrieve Course Lesson by ID (Admin access only)',
     'operation_id': 'get_course_lesson_details_by_id',
     'description': 'Retrieves a course lesson by its ID for admin users.',
-    'parameters': [
-        OpenApiParameter(
-            name="id",
-            location=OpenApiParameter.PATH,
-            description="Course ID",
-            required=True,
-            type=OpenApiTypes.INT
-        ),
-    ],
     'responses': {
         200: OpenApiResponse(
             description='Course successfully retrieved',
@@ -633,15 +616,6 @@ UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA = {
     'summary': 'Update course lesson by ID (Admin access only)',
     'operation_id': 'update_course_lesson_by_id',
     'description': 'Updates a course lesson based on the provided ID and input data.',
-    'parameters': [
-        OpenApiParameter(
-            name="id",
-            location="path",  # Correct location for path parameters
-            description="Course ID",
-            required=True,
-            type=OpenApiTypes.INT,  # Specify the type as INT
-        ),
-    ],
     
     'responses': {
         200: OpenApiResponse(

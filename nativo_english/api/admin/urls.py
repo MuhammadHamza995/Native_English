@@ -17,11 +17,11 @@ urlpatterns = [
     path('course/', AdminCourseListCreateView.as_view(), name='course-create-list'),
     path('course/<int:id>/', AdminCourseRetrieveUpdateView.as_view(), name='course-detail'),
 
-    path('course/section/', AdminCourseSectionListCreateView.as_view(), name='course-section-create-list'),
-    path('course/section/<int:course_section_id>/', AdminCourseSectionRetrieveUpdateView.as_view(), name='course-section-detail'),
+    path('course/<int:course_id>/section/', AdminCourseSectionListCreateView.as_view(), name='course-section-create-list'),
+    path('course/<int:course_id>/section/<int:course_section_id>/', AdminCourseSectionRetrieveUpdateView.as_view(), name='course-section-detail'),
 
-    path('course/section/lesson', AdminCourseLessonListCreateView.as_view(), name='course-lesson-create-list'),
-    path('course/section/lesson/<int:course_lesson_id>/', AdminCourseLessonRetrieveUpdateView.as_view(), name='course-lesson-detail'),
+    path('course/section/<int:course_section_id>/lesson', AdminCourseLessonListCreateView.as_view(), name='course-lesson-create-list'),
+    path('course/section/<int:course_section_id>/lesson/<int:course_lesson_id>/', AdminCourseLessonRetrieveUpdateView.as_view(), name='course-lesson-detail'),
 
     path('course/section/lesson/<int:lesson_id>/content/', AdminCourseLessonContentListCreateView.as_view(), name='course-section-lesson-content-create-list'),
 ]

@@ -5,7 +5,7 @@ Description: This function will return all courses with sorting and filtering op
 *****************************************************/
 
 -- Drop the function if it already exists
-DROP FUNCTION IF EXISTS courses_list_with_pagination_get(INT, INT, TEXT, TEXT, BOOLEAN, BOOLEAN, TEXT, TEXT, TEXT, BIGINT);
+DROP FUNCTION IF EXISTS courses_list_with_pagination_get(INT, INT, TEXT, TEXT, BOOLEAN, BOOLEAN, TEXT, TEXT, TEXT, BIGINT, TEXT);
 
 -- Create or replace the function
 CREATE OR REPLACE FUNCTION courses_list_with_pagination_get(
@@ -18,7 +18,8 @@ CREATE OR REPLACE FUNCTION courses_list_with_pagination_get(
     search_query TEXT DEFAULT NULL,
     sort_field TEXT DEFAULT 'created_at',  -- Default sort by creation date
     sort_direction TEXT DEFAULT 'DESC',   -- Default sort direction is descending
-    filter_owner_id BIGINT DEFAULT NULL   -- Filter by owner ID
+    filter_owner_id BIGINT DEFAULT NULL,   -- Filter by owner ID
+    filter_level TEXT DEFAULT NULL
 )
 
 RETURNS TABLE (
@@ -28,6 +29,7 @@ RETURNS TABLE (
     is_paid BOOLEAN,
     price FLOAT,
     mode character varying,
+    level character varying,
     avg_rating FLOAT,
     is_active BOOLEAN,
     owner_name TEXT,
@@ -49,6 +51,7 @@ BEGIN
     WHERE c.is_active = filter_is_active
     AND (filter_title IS NULL OR c.title ILIKE '%' || filter_title || '%')
     AND (filter_mode IS NULL OR c.mode ILIKE '%' || filter_mode || '%')
+    AND (filter_level IS NULL OR c.level ILIKE '%' || filter_level || '%')
     AND (filter_is_paid IS NULL OR c.is_paid = filter_is_paid)
     AND (filter_owner_id IS NULL OR c.fk_owner_id = filter_owner_id)
     AND (
@@ -66,6 +69,7 @@ BEGIN
         c.is_paid,
         c.price,
         c.mode,
+        c.level,
         c.avg_rating,
         c.is_active,
         COALESCE(
@@ -109,6 +113,7 @@ BEGIN
         c.is_active = filter_is_active
         AND (filter_title IS NULL OR c.title ILIKE '%' || filter_title || '%')
         AND (filter_mode IS NULL OR c.mode ILIKE '%' || filter_mode || '%')
+        AND (filter_level IS NULL OR c.level ILIKE '%' || filter_level || '%')
         AND (filter_is_paid IS NULL OR c.is_paid = filter_is_paid)
         AND (filter_owner_id IS NULL OR c.fk_owner_id = filter_owner_id)
         AND (

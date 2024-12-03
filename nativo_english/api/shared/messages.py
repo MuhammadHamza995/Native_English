@@ -44,7 +44,7 @@ LESSON_NOT_FOUND_MESSAGE = 'Lesson Not Found'
 ACTIVATE_SUSPEND_INVALID_ACTION_MESSAGE = 'Invalid Action. Must be activate or suspend'
 COURSE_CREATE_ERROR_MESSAGE = 'Error creating course'
 
-SECTION_NOT_FOUND_MESSAGE = 'Section Not Found'
+COURSE_SECTION_NOT_FOUND_MESSAGE = 'Section Not Found'
 COURSE_LESSON_CREATED_SUCCESS_MESSAGE = 'Course lesson created successfully'
 LESSON_LIST_RETRIEVED_SUCCESS_MESSAGE = 'Lesson List Retrieved successfully'
 COURSE_LESSON_RETRIEVED_SUCCESS_MESSAGE = 'Course lesson retrieved successfully'

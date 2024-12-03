@@ -233,6 +233,7 @@ class AdminCourseListCreateView(APIView):
         sort_field = request.query_params.get('sort_by', None)
         sort_order = request.query_params.get('sort_order', None)
         filter_owner_id = request.query_params.get('filter_owner_id', None)
+        filter_level = request.query_params.get('level', None)
 
         queryset = get_all_courses_with_pagination(page_num, 
                                                    page_size, 
@@ -243,7 +244,8 @@ class AdminCourseListCreateView(APIView):
                                                    search_query, 
                                                    sort_field, 
                                                    sort_order,
-                                                   filter_owner_id)
+                                                   filter_owner_id,
+                                                   filter_level)
 
         return api_response(status.HTTP_200_OK, messages.COURSE_LIST_RETRIEVED_SUCCESS_MESSAGE, queryset)
 
@@ -306,11 +308,10 @@ class AdminCourseSectionListCreateView(APIView):
     pagination_class = AdminUserPagination
 
     @extend_schema(**GET_ADMIN_COURSE_ALL_SECTION_SCHEMA)
-    def get(self, request, *args, **kwargs):
+    def get(self, request, course_id, *args, **kwargs):
         title = request.query_params.get('title')
-        course_id = request.query_params.get('course_id')
 
-        sections = get_all_course_sections(filter_title=title, course_id=course_id)
+        sections = get_all_course_sections(request, course_id=course_id, filter_title=title)
 
         if not sections:
             return api_response(status.HTTP_404_NOT_FOUND,messages.SECTION_NOT_FOUND_MESSAGE)
@@ -330,8 +331,14 @@ class AdminCourseSectionListCreateView(APIView):
         return api_response(status.HTTP_200_OK, messages.SECTION_LIST_RETRIEVED_SUCCESS_MESSAGE, sections)
 
     @extend_schema(**POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA)
-    def post(self, request, *args, **kwargs):
-        result = create_course_section(request.data)
+    def post(self, request, course_id, *args, **kwargs):
+
+        if course_id is None:
+            return api_response(status.HTTP_400_BAD_REQUEST, messages.COURSE_NOT_FOUND_MESSAGE)
+        
+        request.data['fk_course_id'] = course_id
+
+        result = create_course_section(request)
         if isinstance(result, dict):
             if 'errors' in result:
                 return api_response(status.HTTP_400_BAD_REQUEST, messages.SECTION_CREATION_ERROR_MESSAGE, result['errors'])
@@ -350,13 +357,20 @@ class AdminCourseSectionRetrieveUpdateView(APIView):
     pagination_class = PageNumberPagination
 
     @extend_schema(**GET_ADMIN_COURSE_SECTION_DETAIL_BY_ID_SCHEMA)
-    def get(self, request, course_section_id,*args, **kwargs):
-        course_data = get_course_section_by_id(course_section_id)
+    def get(self, request, course_id, course_section_id,*args, **kwargs):
+        course_data = get_course_section_by_id(request, course_section_id, course_id)
         return api_response(status.HTTP_200_OK, messages.COURSE_SECTION_RETRIEVED_SUCCESS_MESSAGE, course_data)
 
     @extend_schema(**UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA)
-    def put(self, request, course_section_id=None, *args, **kwargs):
-        result = update_course_section(course_section_id, request.data)
+    def put(self, request, course_id, course_section_id, *args, **kwargs):
+        if course_id is None:
+            return api_response(status.HTTP_400_BAD_REQUEST, messages.COURSE_NOT_FOUND_MESSAGE)
+        
+        elif course_section_id is None:
+            return api_response(status.HTTP_400_BAD_REQUEST, messages.COURSE_SECTION_NOT_FOUND_MESSAGE)
+        
+        request.data['fk_course_id'] = course_id
+        result = update_course_section(request, course_section_id, course_id)
 
         if "error" in result or "non_field_errors" in result:
             return api_response(status.HTTP_400_BAD_REQUEST, messages.BAD_REQUEST_ERROR_MESSAGE, result)
@@ -379,15 +393,10 @@ class AdminCourseLessonListCreateView(APIView):
     pagination_class = AdminUserPagination
 
     @extend_schema(**GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA)
-    def get(self, request, *args, **kwargs):
+    def get(self, request, course_section_id, *args, **kwargs):
         title = request.query_params.get('title')
-        course_id = request.query_params.get('course_id')
-        section_id = request.query_params.get('section_id')
-        # course_id = int(course_id) if course_id else None
-        # section_id = int(section_id) if section_id else None
-        print(course_id, section_id)
-
-        lessons = get_all_course_lessons(filter_title=title, course_id=course_id, section_id=section_id)
+        
+        lessons = get_all_course_lessons(filter_title=title, section_id=course_section_id)
 
         if not lessons:
             return api_response(status.HTTP_404_NOT_FOUND,messages.LESSON_NOT_FOUND_MESSAGE)
@@ -408,7 +417,8 @@ class AdminCourseLessonListCreateView(APIView):
 
     @extend_schema(**POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, course_section_id, *args, **kwargs):
+        request.data['fk_section_id'] = course_section_id
         result = create_course_lesson(request.data)
 
         if isinstance(result, dict):
@@ -429,13 +439,14 @@ class AdminCourseLessonRetrieveUpdateView(APIView):
     pagination_class = PageNumberPagination
 
     @extend_schema(**GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA)
-    def get(self, request, course_lesson_id, *args, **kwargs):
+    def get(self, request, course_section_id, course_lesson_id, *args, **kwargs):
         course_data = get_course_lesson_by_id(course_lesson_id)
         return api_response(status.HTTP_200_OK, messages.COURSE_LESSON_RETRIEVED_SUCCESS_MESSAGE, course_data)
 
 
     @extend_schema(**UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA)
-    def put(self, request, course_lesson_id=None, *args, **kwargs):
+    def put(self, request, course_section_id, course_lesson_id=None, *args, **kwargs):
+        request.data['fk_section_id'] = course_section_id
         result = update_course_lesson(course_lesson_id, request.data)
 
         if "error" in result or "non_field_errors" in result:
@@ -458,3 +469,5 @@ class AdminCourseLessonContentListCreateView(APIView):
     def get(self, request, lesson_id, *args, **kwargs):
         
         return
+    
+

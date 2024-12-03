@@ -119,7 +119,7 @@ def update_course(course_id, request):
         raise ex
 
 
-def get_all_courses_with_pagination(page_num, page_size, title, mode, is_paid, is_active, search_query, sort_field, sort_order, owner_id):
+def get_all_courses_with_pagination(page_num, page_size, title, mode, is_paid, is_active, search_query, sort_field, sort_order, owner_id, level):
     """
     Retrieves a list of Course instances, optionally filtered by name or payment status.
 
@@ -140,7 +140,7 @@ def get_all_courses_with_pagination(page_num, page_size, title, mode, is_paid, i
     """
     try:
         all_courses_results = call_plpgsql_function('courses_list_with_pagination_get', 
-            page_num, page_size, title, mode, is_paid, is_active, search_query, sort_field, sort_order, owner_id
+            page_num, page_size, title, mode, is_paid, is_active, search_query, sort_field, sort_order, owner_id, level
         )
 
         # Prepare the response
@@ -152,6 +152,7 @@ def get_all_courses_with_pagination(page_num, page_size, title, mode, is_paid, i
                 'is_paid': row['is_paid'],
                 'price': row['price'],
                 'mode': row['mode'],
+                'level': row['level'],
                 'avg_rating': row['avg_rating'],
                 'is_active': row['is_active'],
                 'owner_name': row['owner_name'],
@@ -225,7 +226,7 @@ def get_course_detail_by_id(course_id, owner_id=None):
 
 #--------- COURSE SECTION  --------------
 
-def create_course_section(data):
+def create_course_section(request):
 
     """
     Creates a new Course Section instance from the provided data.
@@ -241,9 +242,9 @@ def create_course_section(data):
     """
 
     try:
-        serializer = CourseSectionSerializer(data=data)
+        serializer = CourseSectionSerializer(data=request.data)
         if serializer.is_valid():
-            course_section = serializer.save()
+            course_section = serializer.save(created_by=request.user, modified_by=request.user)
             return CourseSectionSerializer(course_section).data
         # return serializer.errors 
         return {"errors": serializer.errors}
@@ -251,7 +252,7 @@ def create_course_section(data):
     except Exception as ex:
         raise ex
 
-def get_all_course_sections(filter_title=None, course_id=None):
+def get_all_course_sections(request, course_id=None, filter_title=None,):
     """
     Fetch course sections by PL/pgSQL function or Django ORM based on the input filters.
     """
@@ -271,7 +272,7 @@ def get_all_course_sections(filter_title=None, course_id=None):
 
     return sections
 
-def get_course_section_by_id(course_section_id):
+def get_course_section_by_id(request, course_section_id=None, fk_course_id=None):
 
     """
     Retrieves a Course Section instance by its ID.
@@ -290,13 +291,13 @@ def get_course_section_by_id(course_section_id):
     """
 
     try:
-        if course_section_id is not None:
-            course_section = get_object_or_404(CourseSection, id=course_section_id)
+        if course_section_id is not None and fk_course_id is not None:
+            course_section = get_object_or_404(CourseSection, id=course_section_id, fk_course_id=fk_course_id)
             return CourseSectionSerializer(course_section).data
     except Exception as ex:
         raise ex
 
-def update_course_section(course_section_id, data):
+def update_course_section(request , course_section_id, fk_course_id):
 
     """
     Updates an existing Course Section instance with the provided data.
@@ -316,10 +317,10 @@ def update_course_section(course_section_id, data):
     """
 
     try:
-        course_section = get_object_or_404(CourseSection, id=course_section_id)
-        serializer = CourseSectionSerializer(course_section, data=data, partial=True)
+        course_section = get_object_or_404(CourseSection, id=course_section_id, fk_course_id=fk_course_id)
+        serializer = CourseSectionSerializer(course_section, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(modified_by=request.user)
             return serializer.data
         return serializer.errors 
     
@@ -354,11 +355,11 @@ def create_course_lesson(data):
     except Exception as ex:
         raise ex
 
-def get_all_course_lessons(filter_title=None, course_id=None, section_id=None):
+def get_all_course_lessons(filter_title=None, section_id=None, course_id=None):
     """
     Fetch course lessons by PL/pgSQL function or Django ORM based on the input filters.
     """
-    if course_id or section_id:
+    if section_id:
         # Call the PL/pgSQL function to fetch lessons by course_id or section_id
         lessons = call_plpgsql_function('course_lesson_by_course_or_section_id_get', course_id, section_id)
         lessons = [lesson for lesson in lessons if lesson['is_active']]
