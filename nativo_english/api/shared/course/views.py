@@ -3,10 +3,12 @@ from django.shortcuts import get_object_or_404
 from .models import Course,CourseSection, CourseLesson
 from .serializer import CourseSerializer, CourseSectionSerializer, CourseLessonSerializer
 from .models import Course,CourseSection, CourseLesson
-from .serializer import CourseSerializer, CourseSectionSerializer, CourseLessonSerializer
 from rest_framework.exceptions import NotFound
 from nativo_english.api.shared.db_helper import call_plpgsql_function
-
+from django.core.exceptions import ValidationError
+from nativo_english.api.shared.upload_engine import handle_file_upload
+from nativo_english.api.shared.course.models import LessonContent
+from nativo_english.api.shared.course.serializer import  LessonContentSerializer
 #--------- COURSE --------------
 
 def create_course(request):
@@ -428,3 +430,42 @@ def update_course_lesson(course_lesson_id, data):
     
     except Exception as ex:
         raise ex
+
+def create_lesson_content(data, files):
+    """
+    Creates a new lesson content record.
+
+    Args:
+        data (dict): Data containing lesson_id, text, audio, image, and video URLs.
+        files (dict): Files to be uploaded (e.g., video file).
+
+    Returns:
+        dict: Serialized data of the created lesson content.
+    """
+    # Ensure lesson_id is present and is a valid integer
+    lesson_id = data.get("lesson_id")
+    if not lesson_id:
+        raise ValidationError({"lesson_id": "This field is required."})
+
+    # Handle file upload for video if provided
+    content_video_url = None
+    if "video_url" in data:
+        content_video_url = data.get("video_url")  # Video URL
+
+    # Extract other fields
+    text = data.get("text", "")
+    audio = data.get("audio", "")
+    image = data.get("image", "")
+
+    # Create lesson content in the database
+    lesson_content = LessonContent.objects.create(
+        fk_course_lesson_id=lesson_id,
+        content_video_url=content_video_url,
+        content_text=text,
+        content_audio_url=audio,
+        content_image_url=image,
+    )
+
+    # Serialize and return the created instance
+    return LessonContentSerializer(lesson_content).data
+

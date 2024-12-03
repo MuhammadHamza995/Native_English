@@ -19,10 +19,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
         validated_data['password'] = make_password(validated_data['password'])
         return super().create(validated_data)
 
-class AdminCourseLessonContentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LessonContent
-        fields = ['id', 'fk_course_lesson_id', 'content_file_url', 'content_text', 'content_audio_url', 'content_image_url']
+
     # def create(self, validated_data):
     #     # Apply password hashing
     #     if validated_data['password']:

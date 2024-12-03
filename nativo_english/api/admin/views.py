@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import PermissionDenied
-from .serializer import AdminUserSerializer,AdminCourseLessonContentSerializer
+from .serializer import AdminUserSerializer
 from nativo_english.api.shared.course.serializer import CourseSerializer, CourseSectionSerializer, CourseLessonSerializer
 from nativo_english.api.shared.user.models import User
 #from nativo_english.api.shared.course.serializer import AdminCourseLessonContentSerializer
@@ -19,11 +19,12 @@ from rest_framework.exceptions import NotFound,ValidationError
 from rest_framework.response import Response
 from nativo_english.api.shared.course.models import LessonContent
 from nativo_english.api.shared.utils import api_response
+from nativo_english.api.shared.course.views import create_lesson_content
 from nativo_english.api.shared.upload_engine import handle_file_upload
 from nativo_english.api.shared.course.views import (
     get_all_courses, create_course, update_course, get_course_by_id, get_all_courses_with_pagination, get_course_detail_by_id, 
     get_all_course_sections, get_course_section_by_id, update_course_section, create_course_section, 
-    create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson)
+    create_course_lesson, get_all_course_lessons, get_course_lesson_by_id, update_course_lesson,create_lesson_content)
 from nativo_english.api.shared.utils import api_response
 from .swagger_schema import (
     GET_USER_LIST_SCHEMA, POST_USER_SCHEMA , 
@@ -465,37 +466,25 @@ class AdminCourseLessonContentListCreateView(APIView):
         
         return
     
-# upload course lesson content 
-    
-    """
-    Admin API for creating lesson content (images, audio, text).
-    """
+
     @extend_schema(**POST_ADMIN_COURSE_LESSON_CONTENT_CREATE_SCHEMA)
     def post(self, request, *args, **kwargs):
-     lesson_id = request.data.get("lesson_id")
-     if not lesson_id:
-        raise ValidationError({"lesson_id": "This field is required."})
+        # Extract `lesson_id` from the request body
+        data = request.data
+        lesson_id = data.get("lesson_id")  # Get `lesson_id` from the body, not the path
+        
+        # Check if `lesson_id` exists and is required
+        if not lesson_id:
+            return Response({"lesson_id": "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-     file = request.FILES.get("content_file")
-     if file:
-        try:
-            content_file_url = handle_file_upload(file)
-        except ValidationError as e:
-            raise ValidationError({"content_file": str(e)})
-     else:
-        content_file_url = None
+        # Handle files (if any)
+        files = request.FILES
+        
+        # Call the function to create lesson content
+        created_content = create_lesson_content(data, files)
 
-     text = request.data.get("text", "")
-     audio = request.data.get("audio", "")
-     image = request.data.get("image", "")
+        # Return the created content serialized
+        return Response(created_content, status=status.HTTP_201_CREATED)
 
-     lesson_content = LessonContent.objects.create(
-        fk_course_lesson_id=lesson_id,
-        content_file_url=content_file_url,
-        content_text=text,
-        content_audio_url=audio,
-        content_image_url=image
-     )
-
-     serializer = AdminCourseLessonContentSerializer(lesson_content)
-     return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    

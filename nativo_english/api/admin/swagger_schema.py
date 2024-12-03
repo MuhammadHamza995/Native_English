@@ -689,38 +689,36 @@ POST_ADMIN_COURSE_LESSON_CONTENT_CREATE_SCHEMA = {
     'tags': ['AdminCourseSectionLessonContent'],
     'summary': 'Create a new lesson content (Admin access only)',
     'operation_id': 'create_lesson_content',
-    'description': 'Create a new lesson content for a course lesson, with optional text, audio, image, and file upload.',
+    'description': 'Create a new lesson content for a course lesson, with optional text, audio, image, and video URL.',
     'request': {
         'multipart/form-data': {
             'type': 'object',
             'properties': {
-                'lesson_id': {
+                'lesson_id': {  # This should only appear here in the request body
                     'type': 'integer',
                     'description': 'ID of the lesson the content belongs to',
-                    'example': 1
-                },
-                'content_file': {
-                    'type': 'string',
-                    'format': 'binary',
-                    'description': 'File to upload (image, audio, etc.)'
+                    'required': True  # Explicitly mark this as required
                 },
                 'text': {
                     'type': 'string',
-                    'description': 'Text content for the lesson',
-                    'example': 'This is lesson text content.'
+                    'description': 'Text content for the lesson'
                 },
                 'audio': {
                     'type': 'string',
-                    'description': 'URL of the audio file',
-                    'example': 'https://example.com/audio.mp3'
+                    'format': 'uri',
+                    'description': 'URL or path of the audio file'
                 },
                 'image': {
                     'type': 'string',
-                    'description': 'URL of the image',
-                    'example': 'https://example.com/image.png'
-                }
-            },
-            'required': ['lesson_id']
+                    'format': 'uri',
+                    'description': 'URL or path of the image'
+                },
+                'video_url': {
+                    'type': 'string',
+                    'format': 'uri',
+                    'description': 'URL or path of the video file'
+                },
+            }
         }
     },
     'responses': {
@@ -736,6 +734,5 @@ POST_ADMIN_COURSE_LESSON_CONTENT_CREATE_SCHEMA = {
         }
     }
 }
-
 
 
