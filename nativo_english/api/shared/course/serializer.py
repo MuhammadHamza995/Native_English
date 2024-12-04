@@ -26,7 +26,7 @@ class LessonContentSerializer(serializers.ModelSerializer):
         model = LessonContent
         fields = [
             'id', 
-            'fk_course_lesson', 
+            'fk_course_lesson_id', 
             'content_type', 
             'content_text', 
             'content_audio_url', 

@@ -78,7 +78,7 @@ class LessonContent(models.Model):
     )
 
     content_title = models.CharField(max_length=200, null=True)
-    lesson_content_position = models.PositiveIntegerField()
+    lesson_content_position = models.PositiveIntegerField(default=1)
     fk_course_lesson_id = models.ForeignKey(CourseLesson, on_delete=models.CASCADE, db_column='fk_course_lesson_id')
     is_active = models.BooleanField(default=False)
     language = models.CharField(max_length=7, choices=settings.LANGUAGES)  # Use Django's built-in language list

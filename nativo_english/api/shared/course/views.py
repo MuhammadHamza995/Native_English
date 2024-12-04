@@ -460,7 +460,7 @@ def create_lesson_content(lesson_id, data=None, FILES=None):
 
     # Create the lesson content in the database, using the fetched CourseLesson instance
     lesson_content = LessonContent.objects.create(
-        fk_course_lesson=lesson,  # Use the CourseLesson instance here
+        fk_course_lesson_id=lesson,  # Use the CourseLesson instance here
         content_video_url=content_video_url,
         content_text=text,
         content_audio_url=content_audio_url,
