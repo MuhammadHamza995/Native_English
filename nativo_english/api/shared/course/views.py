@@ -431,41 +431,43 @@ def update_course_lesson(course_lesson_id, data):
     except Exception as ex:
         raise ex
 
-def create_lesson_content(data, files):
+
+def create_lesson_content(lesson_id, data=None, FILES=None):
     """
-    Creates a new lesson content record.
-
-    Args:
-        data (dict): Data containing lesson_id, text, audio, image, and video URLs.
-        files (dict): Files to be uploaded (e.g., video file).
-
-    Returns:
-        dict: Serialized data of the created lesson content.
+    Creates a new lesson content record with uploaded files.
     """
-    # Ensure lesson_id is present and is a valid integer
-    lesson_id = data.get("lesson_id")
-    if not lesson_id:
-        raise ValidationError({"lesson_id": "This field is required."})
-
-    # Handle file upload for video if provided
+    # Fetch the CourseLesson instance using the lesson_id
+    try:
+        lesson = CourseLesson.objects.get(id=lesson_id)
+    except CourseLesson.DoesNotExist:
+        raise NotFound(f"CourseLesson with ID {lesson_id} not found.")
+    
+    # Handle file uploads using `upload_engine.py`
     content_video_url = None
-    if "video_url" in data:
-        content_video_url = data.get("video_url")  # Video URL
+    if 'video_url' in FILES:
+        content_video_url = handle_file_upload(FILES['video_url'], allowed_extensions=['.mp4'])
+
+    content_audio_url = None
+    if 'audio' in FILES:
+        content_audio_url = handle_file_upload(FILES['audio'], allowed_extensions=['.mp3'])
+
+    content_image_url = None
+    if 'image' in FILES:
+        content_image_url = handle_file_upload(FILES['image'], allowed_extensions=['.jpg', '.png', '.jpeg'])
 
     # Extract other fields
-    text = data.get("text", "")
-    audio = data.get("audio", "")
-    image = data.get("image", "")
+    text = data.get('text', '')
 
-    # Create lesson content in the database
+    # Create the lesson content in the database, using the fetched CourseLesson instance
     lesson_content = LessonContent.objects.create(
-        fk_course_lesson_id=lesson_id,
+        fk_course_lesson=lesson,  # Use the CourseLesson instance here
         content_video_url=content_video_url,
         content_text=text,
-        content_audio_url=audio,
-        content_image_url=image,
+        content_audio_url=content_audio_url,
+        content_image_url=content_image_url,
     )
 
     # Serialize and return the created instance
     return LessonContentSerializer(lesson_content).data
+
 

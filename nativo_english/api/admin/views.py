@@ -468,22 +468,15 @@ class AdminCourseLessonContentListCreateView(APIView):
     
 
     @extend_schema(**POST_ADMIN_COURSE_LESSON_CONTENT_CREATE_SCHEMA)
-    def post(self, request, *args, **kwargs):
-        # Extract `lesson_id` from the request body
-        data = request.data
-        lesson_id = data.get("lesson_id")  # Get `lesson_id` from the body, not the path
-        
-        # Check if `lesson_id` exists and is required
+    def post(self, request, lesson_id, *args, **kwargs):
+        # Check if `lesson_id` exists and is valid
         if not lesson_id:
-            return Response({"lesson_id": "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return api_response(status.HTTP_400_BAD_REQUEST, messages.LESSON_NOT_FOUND_MESSAGE)
 
-        # Handle files (if any)
-        files = request.FILES
-        
-        # Call the function to create lesson content
-        created_content = create_lesson_content(data, files)
+        # Call the `create_lesson_content` function
+        created_content = create_lesson_content(lesson_id, request.data, request.FILES)
 
-        # Return the created content serialized
+        # Return the created content
         return Response(created_content, status=status.HTTP_201_CREATED)
 
     

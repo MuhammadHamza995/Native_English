@@ -15,27 +15,18 @@ import environ
 from datetime import timedelta
 import os
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Initialize django-environ
 env = environ.Env(
-    DEBUG=(bool, False),  # default to False in production
-    # SECRET_KEY=(str, 'testestesfdsjfdasjfhadsjkfh'),
-    # ALLOWED_HOSTS=(str, ['*']),
-    # DATABASE_URL=(str, 'postgres://nativo_english:pgdev@127.0.0.1:5432/nativo_english')
+    DEBUG=(bool, False),
 )
 
-# Read the .env file (for local/development)
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-# Set configurations
 DEBUG = env('DEBUG')
 SECRET_KEY = env('SECRET_KEY')
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
-
-# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -45,19 +36,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    # 'drf_yasg',
     'drf_spectacular',
     'drf_spectacular_sidecar',
-    
-    # Project Based apps
     'nativo_english.api',
     'nativo_english.api.admin',
-
     'nativo_english.api.shared',
     'nativo_english.api.shared.auth',
     'nativo_english.api.shared.user',
     'nativo_english.api.shared.course',
-
     'nativo_english.db_scripts_automate',
 ]
 
@@ -68,7 +54,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    
     'EXCEPTION_HANDLER': 'nativo_english.api.shared.utils.api_exception_handler',
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
@@ -77,36 +62,27 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'NATIVO ENGLISH APIs',
     'DESCRIPTION': 'APIs to access NATIVO ENGLISH PLATFORM',
     'VERSION': '1.0.0',
-    'SWAGGER_UI_DIST': 'SIDECAR',  # shorthand to use the sidecar instead
+    'SWAGGER_UI_DIST': 'SIDECAR',
     'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
     'REDOC_DIST': 'SIDECAR',
-
-    'SWAGGER_UI_SETTINGS': {
-        'persistAuthorization': True,  # Keeps authorization data between refreshes
-        # 'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SuffixOperationIdSchema'
-    },
-
-    'SERVE_INCLUDE_SCHEMA': False,
-    
-    'SECURITY': [{'BearerAuth': []}],  # Reference the security scheme here
-    'COMPONENT_SPLIT_REQUEST': True,   # Helpful if you want to split request schemas
+    'SECURITY': [{'BearerAuth': []}],
+    'COMPONENT_SPLIT_REQUEST': True,
     'SECURITY_DEFINITIONS': {
         'BearerAuth': {
             'type': 'http',
             'scheme': 'bearer',
             'bearerFormat': 'JWT',
-            'description': 'JWT Authorization header using the Bearer scheme. Example: "Bearer <your JWT token>"'
+            'description': 'JWT Authorization header using the Bearer scheme.'
         }
     },
-    
 }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'AUTH_HEADER_TYPES': ('Bearer',), 
-    'ALGORITHM': 'HS256',  # Use HMAC SHA-256 algorithm
-    'SIGNING_KEY': os.getenv('JWT_SECRET_KEY', 'your-secret-key'), 
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': os.getenv('JWT_SECRET_KEY', 'your-secret-key'),
 }
 
 MIDDLEWARE = [
@@ -139,17 +115,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'nativo_english.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
 DATABASES = {
     'default': env.db('DATABASE_URL')
 }
-
-
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -166,33 +134,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 AUTH_USER_MODEL  = 'User.user'
 
-# # Static files (CSS, JavaScript, Images)
-# # https://docs.djangoproject.com/en/5.1/howto/static-files/
-
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# If you don't already have this, add the static directory paths here
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',  # Add a static directory if not present
+    BASE_DIR / 'static',
 ]
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -205,10 +158,6 @@ LOGGING = {
         },
     },
     'loggers': {
-        # 'django': {
-        #     'handlers': ['console'],
-        #     'level': 'DEBUG',
-        # },
         'django.request': {
             'handlers': ['console'],
             'level': 'DEBUG',
@@ -221,7 +170,10 @@ LOGGING = {
 }
 
 SECURE_SSL_REDIRECT = False
-
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 BUILD_VERSION = 'ne-s2'
+
+# Media files (uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

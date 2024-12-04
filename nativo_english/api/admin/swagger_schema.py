@@ -690,15 +690,19 @@ POST_ADMIN_COURSE_LESSON_CONTENT_CREATE_SCHEMA = {
     'summary': 'Create a new lesson content (Admin access only)',
     'operation_id': 'create_lesson_content',
     'description': 'Create a new lesson content for a course lesson, with optional text, audio, image, and video URL.',
+    'parameters': [
+        OpenApiParameter(
+            name="lesson_id",
+            location="path",  # lesson_id is now a path parameter
+            description="ID of the lesson the content belongs to",
+            required=True,
+            type=OpenApiTypes.INT,  # Ensure the type is set as integer
+        ),
+    ],
     'request': {
         'multipart/form-data': {
             'type': 'object',
             'properties': {
-                'lesson_id': {  # This should only appear here in the request body
-                    'type': 'integer',
-                    'description': 'ID of the lesson the content belongs to',
-                    'required': True  # Explicitly mark this as required
-                },
                 'text': {
                     'type': 'string',
                     'description': 'Text content for the lesson'
@@ -718,21 +722,34 @@ POST_ADMIN_COURSE_LESSON_CONTENT_CREATE_SCHEMA = {
                     'format': 'uri',
                     'description': 'URL or path of the video file'
                 },
-            }
-        }
+            },
+        },
     },
     'responses': {
-        201: {
-            'description': 'Lesson content created successfully',
-            'content': {
-                'application/json': {
-                    'schema': {
-                        '$ref': '#/components/schemas/LessonContent'
-                    }
-                }
-            }
-        }
-    }
+        201: OpenApiResponse(
+            description='Lesson content created successfully',
+            response={
+                'type': 'object',
+                'properties': {
+                    'status': {'type': 'integer', 'example': 201},
+                    'id': {'type': 'integer'},
+                    'lesson_id': {'type': 'integer'},
+                    'text': {'type': 'string'},
+                    'audio': {'type': 'string'},
+                    'image': {'type': 'string'},
+                    'video_url': {'type': 'string'},
+                },
+            },
+        ),
+        400: OpenApiResponse(
+            description='Bad Request',
+            response={
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string', 'example': 'Invalid data'},
+                },
+            },
+        ),
+    },
 }
-
 

@@ -40,7 +40,7 @@ Thumbs.db
 *.exe
 *.war
 
-# Large media files
+# Large media files (Add specific file types you want to ignore)
 *.mp4
 *.tiff
 *.avi
@@ -48,6 +48,14 @@ Thumbs.db
 *.mov
 *.wmv
 
+# Ignore environment files
 *.env
 
+# Ignore virtual environments
 venv/
+
+# Ignore the media directory (avoid tracking user-uploaded files)
+media/
+
+# Optionally ignore static files generated for production if you're using versioning
+/static/
