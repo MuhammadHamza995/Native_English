@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+
+    'parler',
     # 'drf_yasg',
     'drf_spectacular',
     'drf_spectacular_sidecar',
@@ -57,7 +59,28 @@ INSTALLED_APPS = [
     'nativo_english.api.shared.auth',
     'nativo_english.api.shared.user',
     'nativo_english.api.shared.course',
+
+    'nativo_english.db_scripts_automate',
 ]
+LANGUAGES = [
+    ('en', 'English'),
+    ('fr', 'French'),
+    ('es', 'Spanish'),
+]
+
+PARLER_DEFAULT_LANGUAGE_CODE = 'en'
+
+PARLER_LANGUAGES = {
+    None: (  # Default site-wide settings
+        {'code': 'en'},
+        {'code': 'fr'},
+        {'code': 'es'},
+    ),
+    'default': {
+        'fallbacks': ['en'],  # Fallback language
+        'hide_untranslated': False,  # Show fields without translation
+    },
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -75,15 +98,17 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'NATIVO ENGLISH APIs',
     'DESCRIPTION': 'APIs to access NATIVO ENGLISH PLATFORM',
     'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': True,
     'SWAGGER_UI_DIST': 'SIDECAR',  # shorthand to use the sidecar instead
     'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
     'REDOC_DIST': 'SIDECAR',
 
     'SWAGGER_UI_SETTINGS': {
         'persistAuthorization': True,  # Keeps authorization data between refreshes
-        'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SuffixOperationIdSchema'
+        # 'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SuffixOperationIdSchema'
     },
+
+    'SERVE_INCLUDE_SCHEMA': False,
+    
     'SECURITY': [{'BearerAuth': []}],  # Reference the security scheme here
     'COMPONENT_SPLIT_REQUEST': True,   # Helpful if you want to split request schemas
     'SECURITY_DEFINITIONS': {
@@ -94,6 +119,7 @@ SPECTACULAR_SETTINGS = {
             'description': 'JWT Authorization header using the Bearer scheme. Example: "Bearer <your JWT token>"'
         }
     },
+    
 }
 
 SIMPLE_JWT = {
@@ -219,3 +245,4 @@ SECURE_SSL_REDIRECT = False
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
+BUILD_VERSION = 'ne-s2'
