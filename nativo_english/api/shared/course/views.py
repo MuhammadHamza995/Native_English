@@ -88,7 +88,7 @@ def get_course_by_id(course_id):
     except Exception as ex:
         raise ex
 
-def update_course(course_id, request):
+def update_course(course_id, request, owner_id = None):
 
     """
     Updates an existing Course instance with the provided data.
@@ -108,7 +108,11 @@ def update_course(course_id, request):
     """
 
     try:
-        course = get_object_or_404(Course, id=course_id)
+        if owner_id:
+            course = get_object_or_404(Course, id=course_id, owner=owner_id)
+        else:
+            course = get_object_or_404(Course, id=course_id)
+
         serializer = CourseSerializer(course, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save(modified_by=request.user)
@@ -200,23 +204,27 @@ def get_course_detail_by_id(course_id, owner_id=None):
     
     try:
         course_details = call_plpgsql_function('course_detail_by_id_get', course_id, owner_id)
-        response_data = {
-                'course_id': course_details[0]['course_id'],
-                'title': course_details[0]['title'],
-                'description': course_details[0]['description'],
-                'is_paid': course_details[0]['is_paid'],
-                'price': course_details[0]['price'],
-                'mode': course_details[0]['mode'],
-                'avg_rating': course_details[0]['avg_rating'],
-                'is_active': course_details[0]['is_active'],
-                'owner_name': course_details[0]['owner_name'],
-                'enrollment_count': course_details[0]['enrollment_count'],
-                'created_at': course_details[0]['created_at'],
-                'created_by': course_details[0]['created_by_name'],
-                'updated_at': course_details[0]['updated_at'],
-                'modified_by': course_details[0]['updated_by_name'],
+        
+        response_data = {}
+        
+        if  course_details:
+            response_data = {
+                    'course_id': course_details[0]['course_id'],
+                    'title': course_details[0]['title'],
+                    'description': course_details[0]['description'],
+                    'is_paid': course_details[0]['is_paid'],
+                    'price': course_details[0]['price'],
+                    'mode': course_details[0]['mode'],
+                    'avg_rating': course_details[0]['avg_rating'],
+                    'is_active': course_details[0]['is_active'],
+                    'owner_name': course_details[0]['owner_name'],
+                    'enrollment_count': course_details[0]['enrollment_count'],
+                    'created_at': course_details[0]['created_at'],
+                    'created_by': course_details[0]['created_by_name'],
+                    'updated_at': course_details[0]['updated_at'],
+                    'modified_by': course_details[0]['updated_by_name'],
 
-        }
+            }
 
         return response_data
         

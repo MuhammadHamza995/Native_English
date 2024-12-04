@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+
+    'parler',
     # 'drf_yasg',
     'drf_spectacular',
     'drf_spectacular_sidecar',
@@ -60,6 +62,25 @@ INSTALLED_APPS = [
 
     'nativo_english.db_scripts_automate',
 ]
+LANGUAGES = [
+    ('en', 'English'),
+    ('fr', 'French'),
+    ('es', 'Spanish'),
+]
+
+PARLER_DEFAULT_LANGUAGE_CODE = 'en'
+
+PARLER_LANGUAGES = {
+    None: (  # Default site-wide settings
+        {'code': 'en'},
+        {'code': 'fr'},
+        {'code': 'es'},
+    ),
+    'default': {
+        'fallbacks': ['en'],  # Fallback language
+        'hide_untranslated': False,  # Show fields without translation
+    },
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

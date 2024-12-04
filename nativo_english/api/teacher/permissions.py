@@ -24,18 +24,6 @@ class IsTeacherUserRole(permissions.BasePermission):
         validated_token = jwt_auth.get_validated_token(token)
         user_role = validated_token.get('role')  # Extract 'role' from JWT payload
         
-        # except AuthenticationFailed as auth_error:
-            # Handle cases where token is missing, invalid, or expired
-            # raise AuthenticationFailed("Invalid or expired token. Please log in again.")
-        
-        # except PermissionDenied as perm_error:
-            # raise PermissionDenied(perm_error)
-        
-        # except Exception as e:
-            # Catch other unexpected errors
-            # print(f"Token validation error: {e}")
-            # raise AuthenticationFailed("An error occurred during token validation.", code=status.HTTP_401_UNAUTHORIZED)
-        
         if user_role == 'teacher':
             return True
         

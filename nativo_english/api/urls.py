@@ -9,4 +9,7 @@ urlpatterns = [
 
     # Admin API URLs goes here
     path('admin/', include('nativo_english.api.admin.urls')),
+
+    # Teacher API URLs goes here
+    path('teacher/', include('nativo_english.api.teacher.urls'))
 ]

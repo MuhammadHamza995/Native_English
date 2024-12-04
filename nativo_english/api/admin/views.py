@@ -252,15 +252,20 @@ class AdminCourseListCreateView(APIView):
 
     @extend_schema(**POST_ADMIN_COURSE_CREATE_SCHEMA)
     def post(self, request, *args, **kwargs):
-    # Create the course using provided data
-      result = create_course(request)
+        # Create the course using provided data
+        result = create_course(request)
 
-    # Check for errors in the result
-      if "error" in result or "non_field_errors" in result:
-        return api_response(status.HTTP_400_BAD_REQUEST, messages.COURSE_CREATE_ERROR_MESSAGE, result)
-    
-    # Return success message
-      return api_response(status.HTTP_201_CREATED, messages.COURSE_CREATED_SUCCESS_MESSAGE, result)
+        # Check for errors in the result
+        if "error" in result or "non_field_errors" in result:
+            return api_response(status.HTTP_400_BAD_REQUEST, messages.COURSE_CREATE_ERROR_MESSAGE, result)
+
+        if any(
+            isinstance(errors, list) and any("required" in getattr(err, "code", "") for err in errors)
+            for errors in result.values()):
+            return api_response(status.HTTP_400_BAD_REQUEST, messages.COURSE_CREATE_ERROR_MESSAGE, result)
+
+        # Return success message
+        return api_response(status.HTTP_201_CREATED, messages.COURSE_CREATED_SUCCESS_MESSAGE, result)
 
 # -----------------------------------------
 
@@ -342,6 +347,11 @@ class AdminCourseSectionListCreateView(APIView):
         if isinstance(result, dict):
             if 'errors' in result:
                 return api_response(status.HTTP_400_BAD_REQUEST, messages.SECTION_CREATION_ERROR_MESSAGE, result['errors'])
+            
+            if any(
+                isinstance(errors, list) and any("required" in getattr(err, "code", "") for err in errors)
+                for errors in result.values()):
+                return api_response(status.HTTP_400_BAD_REQUEST, messages.SECTION_CREATION_ERROR_MESSAGE, result)
         
         return api_response(status.HTTP_201_CREATED, messages.COURSE_SECTION_CREATED_SUCCESS_MESSAGE, result)
 # -----------------------------------------
@@ -424,7 +434,9 @@ class AdminCourseLessonListCreateView(APIView):
         if isinstance(result, dict):
             if 'errors' in result:
                 return api_response(status.HTTP_400_BAD_REQUEST, messages.LESSON_CREATION_ERROR_MESSAGE, result['errors'])
-        
+            if any("required" in err.code for errors in result.values() for err in errors):
+                return api_response(status.HTTP_400_BAD_REQUEST, messages.LESSON_CREATION_ERROR_MESSAGE, result)
+            
         return api_response(status.HTTP_201_CREATED, messages.COURSE_LESSON_CREATED_SUCCESS_MESSAGE, result)
 # -----------------------------------------
 
