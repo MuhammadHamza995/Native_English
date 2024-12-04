@@ -174,7 +174,7 @@ class AdminUserRoleUpdateView(APIView):
             return api_response(status.HTTP_200_OK, messages.USER_ROLE_UPDATED_SUCCESS_MESSAGE.format(id=id), response_serializer.data)
         else:
             return api_response(status.HTTP_400_BAD_REQUEST, f'''{messages.NO_USER_ROLE_PROVIDED}''')
-
+# -----------------------------------------
 
 
 # -----------------------------------------
@@ -206,8 +206,9 @@ class AdminUserActivateSuspendUpdateView(APIView):
             user.save()
             response_serializer = self.serializer_class(user)
             return api_response(status.HTTP_200_OK, f'{messages.USER_SUSPENDED_SUCCESS_MESSAGE} for {id}', response_serializer.data)
+# -----------------------------------------
 
-        
+      
 # -----------------------------------------
 # This view corresponds to following endpoints
 # 1. Get all Courses (can only be access by Admin user rol --> GET /api/admin/course/)
@@ -269,6 +270,7 @@ class AdminCourseListCreateView(APIView):
 
 # -----------------------------------------
 
+
 # -----------------------------------------
 # This view corresponds to following endpoints
 # 1. Retreive Course by ID (can only be access by Admin user rol --> GET /api/admin/course/{id})
@@ -297,7 +299,6 @@ class AdminCourseRetrieveUpdateView(APIView):
      return api_response(status.HTTP_200_OK, messages.COURSE_UPDATED_SUCCESS_MESSAGE, result)
 # -----------------------------------------
 
-# -----------------------------------------
 
 # -----------------------------------------
 # This view corresponds to following endpoints
@@ -356,6 +357,7 @@ class AdminCourseSectionListCreateView(APIView):
         return api_response(status.HTTP_201_CREATED, messages.COURSE_SECTION_CREATED_SUCCESS_MESSAGE, result)
 # -----------------------------------------
 
+
 # -----------------------------------------
 # This view corresponds to following endpoints
 # 1. Retreive Course Section by ID (can only be access by Admin user rol --> GET /api/admin/course/section/{id})
@@ -388,12 +390,12 @@ class AdminCourseSectionRetrieveUpdateView(APIView):
         return api_response(status.HTTP_200_OK, messages.COURSE_SECTION_UPDATED_SUCCESS_MESSAGE, result)
 # -----------------------------------------
 
+
 # -----------------------------------------
 # This view corresponds to following endpoints
 # 1. Get all Courses Lesson(can only be access by Admin user rol --> GET /api/admin/course/section/lesson)
 # 2. Create New Course Lesson user request data (can only be access by Admin user rol --> POST /api/admin/course/section/lesson)
 # -----------------------------------------
-
 class AdminCourseLessonListCreateView(APIView):
     serializer_class = CourseLessonSerializer
     permission_classes = [
@@ -439,6 +441,7 @@ class AdminCourseLessonListCreateView(APIView):
             
         return api_response(status.HTTP_201_CREATED, messages.COURSE_LESSON_CREATED_SUCCESS_MESSAGE, result)
 # -----------------------------------------
+
 
 # -----------------------------------------
 # This view corresponds to following endpoints

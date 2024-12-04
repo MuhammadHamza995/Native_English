@@ -241,141 +241,140 @@ UPDATE_TEACHER_COURSE_UPDATE_SCHEMA = {
 
 
 # --------------------------------------------
-# Get All courses Section by Admin Schema
+# Get All courses Section by Teacher Schema
 # --------------------------------------------
-# GET_ADMIN_COURSE_ALL_SECTION_SCHEMA = {
-#     'tags': ['AdminCourseSection'],
-#     'summary': 'Get All Courses Sections (Admin access only)',
-#     'operation_id': 'get_course_section_list',
-#     'description': 'Lists all courses sections with optional filters by title and course_id.',
-#     'parameters': [
-#         OpenApiParameter(
-#             name="title",
-#             location=OpenApiParameter.QUERY,
-#             description="Title of the course section to filter by (optional).",
-#             required=False,
-#             type=OpenApiTypes.STR
-#         ),
-#         OpenApiParameter(
-#             name="page",
-#             location=OpenApiParameter.QUERY,
-#             description="Page number for paginated results (optional).",
-#             required=False,
-#             type=OpenApiTypes.INT
-#         ),
-#     ]
-# }
+GET_TEACHER_COURSE_ALL_SECTION_SCHEMA = {
+    'tags': ['TeacherCourseSection'],
+    'summary': 'Get All Courses Sections (Teacher access only)',
+    'operation_id': 'get_course_section_list_by_teacher',
+    'description': 'Lists all courses sections with optional filters by title and course_id.',
+    'parameters': [
+        OpenApiParameter(
+            name="title",
+            location=OpenApiParameter.QUERY,
+            description="Title of the course section to filter by (optional).",
+            required=False,
+            type=OpenApiTypes.STR
+        ),
+        OpenApiParameter(
+            name="page",
+            location=OpenApiParameter.QUERY,
+            description="Page number for paginated results (optional).",
+            required=False,
+            type=OpenApiTypes.INT
+        ),
+    ]
+}
 
-# POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA = {
-#     'tags': ['AdminCourseSection'],
-#     'summary': 'Creates a new course section (Can be accessed by user with admin role only)',
-#     'operation_id': 'create_new_course_section',
-#     'description': 'Creates a new course section by Admin User.',
-# }
+POST_TEACHER_COURSE_SECTION_CREATE_SCHEMA = {
+    'tags': ['TeacherCourseSection'],
+    'summary': 'Creates a new course section (Can be accessed by user with teacher role only)',
+    'operation_id': 'create_new_course_section_by_teacher',
+    'description': 'Creates a new course section by Teacher User.',
+}
 
-# GET_ADMIN_COURSE_SECTION_DETAIL_BY_ID_SCHEMA = {
-#     'tags': ['AdminCourseSection'],
-#     'summary': "Retrieve Course Section by ID (Admin access only)",
-#     'operation_id': 'get_course_section_detail_by_id'
-# }
+GET_TEACHER_COURSE_SECTION_DETAIL_BY_ID_SCHEMA = {
+    'tags': ['TeacherCourseSection'],
+    'summary': "Retrieve Course Section by ID (Teacher access only)",
+    'operation_id': 'get_course_section_detail_by_id_teacher'
+}
 
-# UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA = {
-#     'tags': ['AdminCourseSection'],
-#     'summary': "Update Course Section by ID (Admin access only)",
-#     'operation_id': 'update_course_section_detail_by_id'
-# }
+UPDATE_TEACHER_COURSE_SECTION_BY_ID_SCHEMA = {
+    'tags': ['TeacherCourseSection'],
+    'summary': "Update Course Section by ID (Teacher access only)",
+    'operation_id': 'update_course_section_detail_by_id_teacher'
+}
 # # --------------------------------------------
 
 
+# --------------------------------------------
+# Get All courses Lessons by Teacher Schema
+# --------------------------------------------
+GET_TEACHER_ALL_COURSE_LESSON_RETRIEVE_SCHEMA = {
+    'tags': ['TeacherCourseSectionLesson'],
+    'summary': 'Get All Courses Lessons (Teacher access only)',
+    'description': 'Lists all courses lessons with optional filters by title, section_id and course_id.',
+    'operation_id': 'get_course_lesson_list_by_teacher',
+    'parameters': [
+        OpenApiParameter(
+            name="title",
+            location=OpenApiParameter.QUERY,
+            description="Title of the course section to filter by (optional).",
+            required=False,
+            type=OpenApiTypes.STR
+        ),
+        OpenApiParameter(
+            name="page",
+            location=OpenApiParameter.QUERY,
+            description="Page number for paginated results (optional).",
+            required=False,
+            type=OpenApiTypes.INT
+        ),
+    ]
+}
 
-# # --------------------------------------------
-# # Get All courses Lessons by Admin Schema
-# # --------------------------------------------
-# GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA = {
-#     'tags': ['AdminCourseSectionLesson'],
-#     'summary': 'Get All Courses Lessons (Admin access only)',
-#     'description': 'Lists all courses lessons with optional filters by title, section_id and course_id.',
-#     'operation_id': 'get_course_lesson_list',
-#     'parameters': [
-#         OpenApiParameter(
-#             name="title",
-#             location=OpenApiParameter.QUERY,
-#             description="Title of the course section to filter by (optional).",
-#             required=False,
-#             type=OpenApiTypes.STR
-#         ),
-#         OpenApiParameter(
-#             name="page",
-#             location=OpenApiParameter.QUERY,
-#             description="Page number for paginated results (optional).",
-#             required=False,
-#             type=OpenApiTypes.INT
-#         ),
-#     ]
-# }
+GET_TEACHER_COURSE_LESSON_RETRIEVE_SCHEMA = {
+    'tags': ['TeacherCourseSectionLesson'],
+    'summary': 'Retrieve Course Lesson by ID (Teacher access only)',
+    'operation_id': 'get_course_lesson_details_by_id_teacher',
+    'description': 'Retrieves a course lesson by its ID for teacher users.',
+    'responses': {
+        200: OpenApiResponse(
+            description='Course successfully retrieved',
+            response={
+                'type': 'object',
+                'properties': {
+                    'status': {'type': 'integer', 'example': 200},  # Added status for consistency
+                    'data': {
+                        'type': 'object',
+                        'properties': {
+                            'id': {'type': 'integer', 'example': 1},
+                            'title': {'type': 'string', 'example': 'Advanced Python Programming'},
+                            'is_paid': {'type': 'boolean', 'example': True},
+                            'description': {'type': 'string', 'example': 'A comprehensive course on advanced Python concepts.'},
+                        },
+                    },
+                },
+            },
+        ),
+        404: SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE ['404'],
+    },
+}
 
-# GET_ADMIN_COURSE_LESSON_RETRIEVE_SCHEMA = {
-#     'tags': ['AdminCourseSectionLesson'],
-#     'summary': 'Retrieve Course Lesson by ID (Admin access only)',
-#     'operation_id': 'get_course_lesson_details_by_id',
-#     'description': 'Retrieves a course lesson by its ID for admin users.',
-#     'responses': {
-#         200: OpenApiResponse(
-#             description='Course successfully retrieved',
-#             response={
-#                 'type': 'object',
-#                 'properties': {
-#                     'status': {'type': 'integer', 'example': 200},  # Added status for consistency
-#                     'data': {
-#                         'type': 'object',
-#                         'properties': {
-#                             'id': {'type': 'integer', 'example': 1},
-#                             'title': {'type': 'string', 'example': 'Advanced Python Programming'},
-#                             'is_paid': {'type': 'boolean', 'example': True},
-#                             'description': {'type': 'string', 'example': 'A comprehensive course on advanced Python concepts.'},
-#                         },
-#                     },
-#                 },
-#             },
-#         ),
-#         404: SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE ['404'],
-#     },
-# }
+POST_TEACHER_COURSE_LESSON_CREATE_SCHEMA = {
+    'tags': ['TeacherCourseSectionLesson'],
+    'summary': 'Creates a new course lesson (Can be accessed by user with teacher role only)',
+    'operation_id': 'create_course_lesson_teacher',
+    'description': 'Creates a new course lesson by Teacher User.',
+}
 
-# POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA = {
-#     'tags': ['AdminCourseSectionLesson'],
-#     'summary': 'Creates a new course lesson (Can be accessed by user with admin role only)',
-#     'operation_id': 'create_course_lesson',
-#     'description': 'Creates a new course lesson by Admin User.',
-# }
-
-# UPDATE_ADMIN_COURSE_LESSON_UPDATE_SCHEMA = {
-#     'tags': ['AdminCourseSectionLesson'],
-#     'summary': 'Update course lesson by ID (Admin access only)',
-#     'operation_id': 'update_course_lesson_by_id',
-#     'description': 'Updates a course lesson based on the provided ID and input data.',
+UPDATE_TEACHER_COURSE_LESSON_UPDATE_SCHEMA = {
+    'tags': ['TeacherCourseSectionLesson'],
+    'summary': 'Update course lesson by ID (Teacher access only)',
+    'operation_id': 'update_course_lesson_by_id_teacher',
+    'description': 'Updates a course lesson based on the provided ID and input data.',
     
-#     'responses': {
-#         200: OpenApiResponse(
-#             description='Course successfully updated',
-#             response={
-#                 'type': 'object',
-#                 'properties': {
-#                     'status': {'type': 'integer', 'example': 200},
-#                     'id': {'type': 'integer'},
-#                     'title': {'type': 'string'},
-#                     'is_paid': {'type': 'boolean'},
-#                     'description': {'type': 'string'},
-#                 },
-#             },
-#         ),
-#         400: OpenApiResponse(
-#             description='Bad Request',
-#             response={'type': 'object', 'properties': {'message': {'type': 'string', 'example': 'Invalid data'}}},
-#         ),
-#     },
-# }
-# # --------------------------------------------
+    'responses': {
+        200: OpenApiResponse(
+            description='Course successfully updated',
+            response={
+                'type': 'object',
+                'properties': {
+                    'status': {'type': 'integer', 'example': 200},
+                    'id': {'type': 'integer'},
+                    'title': {'type': 'string'},
+                    'is_paid': {'type': 'boolean'},
+                    'description': {'type': 'string'},
+                },
+            },
+        ),
+        400: OpenApiResponse(
+            description='Bad Request',
+            response={'type': 'object', 'properties': {'message': {'type': 'string', 'example': 'Invalid data'}}},
+        ),
+    },
+}
+# --------------------------------------------
 
 
 # # --------------------------------------------
