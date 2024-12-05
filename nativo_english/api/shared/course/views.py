@@ -442,7 +442,7 @@ def create_lesson_content(lesson_id, data=None, FILES=None):
     except CourseLesson.DoesNotExist:
         raise NotFound(f"CourseLesson with ID {lesson_id} not found.")
     
-    # Handle file uploads using `upload_engine.py`
+    # Handle file uploads using `handle_file_upload` from `upload_engine.py`
     content_video_url = None
     if 'video_url' in FILES:
         content_video_url = handle_file_upload(FILES['video_url'], allowed_extensions=['.mp4'])
@@ -460,12 +460,12 @@ def create_lesson_content(lesson_id, data=None, FILES=None):
 
     # Create the lesson content in the database, using the fetched CourseLesson instance
     lesson_content = LessonContent.objects.create(
-        fk_course_lesson_id=lesson,  # Use the CourseLesson instance here
-        content_video_url=content_video_url,
-        content_text=text,
-        content_audio_url=content_audio_url,
-        content_image_url=content_image_url,
-    )
+    fk_course_lesson_id=lesson,  # Use the CourseLesson instance here
+    content_video=content_video_url,
+    content_text=text,
+    content_audio=content_audio_url,
+    content_image=content_image_url,
+)
 
     # Serialize and return the created instance
     return LessonContentSerializer(lesson_content).data

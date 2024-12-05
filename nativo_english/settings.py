@@ -176,4 +176,4 @@ BUILD_VERSION = 'ne-s2'
 
 # Media files (uploads)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / 'media'  

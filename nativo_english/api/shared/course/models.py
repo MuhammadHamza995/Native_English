@@ -68,13 +68,15 @@ class CourseLesson(models.Model):
 
 
 # Content Model of Lesson of a course
-class LessonContent(models.Model):
+from django.db import models
+from django.conf import settings
 
+class LessonContent(models.Model):
     CONTENT_TYPE_CHOICES = (
         ('text', 'Text'),
         ('audio', 'Audio'),
-        ('video', 'video'),
-        ('image', 'image')
+        ('video', 'Video'),
+        ('image', 'Image')
     )
 
     content_title = models.CharField(max_length=200, null=True)
@@ -84,17 +86,19 @@ class LessonContent(models.Model):
     language = models.CharField(max_length=7, choices=settings.LANGUAGES)  # Use Django's built-in language list
     content_type = models.CharField(max_length=10, choices=CONTENT_TYPE_CHOICES, default='text')
     content_text = models.TextField(blank=True, null=True)  # Text content
-    content_video_url = models.URLField(blank=True, null=True)  # Video URL, optional
-    content_audio_url = models.URLField(blank=True, null=True)  # Audio URL, optional
-    content_image_url = models.URLField(blank=True, null=True)  # Image URL, optional
+    content_video = models.FileField(upload_to='videos/', blank=True, null=True)  # Video file field
+    content_audio = models.FileField(upload_to='audios/', blank=True, null=True)  # Audio file field
+    content_image = models.ImageField(upload_to='images/', blank=True, null=True)  # Image file field
 
     # Default Metadata fields
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lesson_content_created', db_column='created_by')
     modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lesson_content_modified', db_column='modified_by')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         ordering = ['lesson_content_position']  # This makes sure the lessons are ordered by the 'lesson_content_position' field
+
 
 # # Content Translation
 # class ContentTranslation(models.Model):

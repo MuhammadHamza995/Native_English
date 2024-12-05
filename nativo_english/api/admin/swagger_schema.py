@@ -709,18 +709,18 @@ POST_ADMIN_COURSE_LESSON_CONTENT_CREATE_SCHEMA = {
                 },
                 'audio': {
                     'type': 'string',
-                    'format': 'uri',
-                    'description': 'URL or path of the audio file'
+                    'format': 'binary',  # Use 'binary' for file uploads
+                    'description': 'Audio file content (must be a file upload)'
                 },
                 'image': {
                     'type': 'string',
-                    'format': 'uri',
-                    'description': 'URL or path of the image'
+                    'format': 'binary',  # Use 'binary' for file uploads
+                    'description': 'Image file content (must be a file upload)'
                 },
                 'video_url': {
                     'type': 'string',
-                    'format': 'uri',
-                    'description': 'URL or path of the video file'
+                    'format': 'binary',  # Use 'binary' for file uploads
+                    'description': 'Video file content (must be a file upload)'
                 },
             },
         },
@@ -752,4 +752,3 @@ POST_ADMIN_COURSE_LESSON_CONTENT_CREATE_SCHEMA = {
         ),
     },
 }
-

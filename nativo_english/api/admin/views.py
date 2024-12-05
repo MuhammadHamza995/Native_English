@@ -469,11 +469,11 @@ class AdminCourseLessonContentListCreateView(APIView):
 
     @extend_schema(**POST_ADMIN_COURSE_LESSON_CONTENT_CREATE_SCHEMA)
     def post(self, request, lesson_id, *args, **kwargs):
-        # Check if `lesson_id` exists and is valid
+        # Check if lesson_id exists and is valid
         if not lesson_id:
             return api_response(status.HTTP_400_BAD_REQUEST, messages.LESSON_NOT_FOUND_MESSAGE)
 
-        # Call the `create_lesson_content` function
+        # Call the create_lesson_content function
         created_content = create_lesson_content(lesson_id, request.data, request.FILES)
 
         # Return the created content
