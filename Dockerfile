@@ -24,6 +24,12 @@ RUN pip install uwsgi
 # Step 8: Copy the Django project files into the container
 COPY . /app/
 
+# Accept SECRET_KEY as a build argument
+ARG SECRET_KEY
+
+# Set SECRET_KEY as an environment variable
+ENV SECRET_KEY=${SECRET_KEY}
+
 # Step 9: Collect static files (if needed for your project)
 RUN python manage.py collectstatic --noinput
 
