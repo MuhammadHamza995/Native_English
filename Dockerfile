@@ -27,12 +27,12 @@ COPY . /app/
 # Accept SECRET_KEY as a build argument
 ARG SECRET_KEY
 
-ARG ALLOWED_HOST
+ARG ALLOWED_HOSTS
 
 # Set SECRET_KEY as an environment variable
 ENV SECRET_KEY=${SECRET_KEY}
 
-ENV ALLOWED_HOST=${ALLOWED_HOST}
+ENV ALLOWED_HOSTS=${ALLOWED_HOSTS}
 
 # Step 9: Collect static files (if needed for your project)
 RUN python manage.py collectstatic --noinput
