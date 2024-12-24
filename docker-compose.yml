@@ -20,6 +20,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}  # Referencing the variable from .env
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # Referencing the variable from .env
       POSTGRES_DB: ${POSTGRES_DB}  # Referencing the variable from .env
+      DATABSE_URL: ${DATABSE_URL}
     ports:
       - "5432:5432"
     volumes:
