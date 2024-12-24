@@ -29,10 +29,14 @@ ARG SECRET_KEY
 
 ARG ALLOWED_HOSTS
 
+ARG DATABASE_URL
+
 # Set SECRET_KEY as an environment variable
 ENV SECRET_KEY=${SECRET_KEY}
 
 ENV ALLOWED_HOSTS=${ALLOWED_HOSTS}
+
+ENV DATABASE_URL=${DATABASE_URL}
 
 # Step 9: Collect static files (if needed for your project)
 RUN python manage.py collectstatic --noinput
