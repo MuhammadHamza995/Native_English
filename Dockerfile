@@ -45,4 +45,4 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
 # Step 11: Command to run uWSGI
-CMD ["uwsgi", "--ini", "app.ini"]
+CMD ["sh", "-c", "python manage.py migrate && uwsgi --ini app.ini"]
