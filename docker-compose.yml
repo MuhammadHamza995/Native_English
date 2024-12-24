@@ -10,6 +10,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # Referencing the variable from .env
       POSTGRES_DB: ${POSTGRES_DB}  # Referencing the variable from .env
       DATABSE_URL: ${DATABSE_URL}
+    volumes:
+      - ./staticfiles:/app/staticfiles  # Adjust to match where your static files are
     ports:
       - "8000:8000"
     depends_on:
