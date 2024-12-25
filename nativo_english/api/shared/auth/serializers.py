@@ -37,8 +37,8 @@ class TwoFactorSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.enable_2fa = validated_data.get('enable_2fa', instance.enable_2fa)
-        if instance.enable_2fa and not instance.otp_secret_key:
-            instance.generate_otp_secret()  # Generate OTP secret key if enabling 2FA
+        # if instance.enable_2fa and not instance.otp_secret_key:
+        #     instance.generate_otp_secret()  # Generate OTP secret key if enabling 2FA
         instance.save()
         return instance
     
