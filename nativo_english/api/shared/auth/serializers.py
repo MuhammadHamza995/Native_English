@@ -46,3 +46,9 @@ class VerifyOTPSerializer(serializers.ModelSerializer):
     class Meta:
         model = OTP
         fields = ['otp']
+
+
+
+# Serializer for the Resend OTP request, only requiring user_id
+class ResendOtpRequestSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()

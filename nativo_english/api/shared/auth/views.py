@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import generics, permissions, status
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import RegisterSerializer, LoginSerializer, TwoFactorSerializer, VerifyOTPSerializer
+from .serializers import RegisterSerializer, LoginSerializer, TwoFactorSerializer, VerifyOTPSerializer, ResendOtpRequestSerializer
 from nativo_english.api.shared.utils import api_response
 from rest_framework.views import APIView
 from nativo_english.api.shared.user.models import UserPrefs, OTP, User
@@ -9,7 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import timedelta
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
-from .swagger_schema import (FA2_UPDATE_SCHEMA, VERIFY_OTP_SCHEMA)
+from .swagger_schema import (FA2_UPDATE_SCHEMA, VERIFY_OTP_SCHEMA,RESEND_OTP_SCHEMA)
 
 def generate_jwt_tokens(user):
     """
@@ -155,3 +155,46 @@ def is_token_present_in_header(request):
 
     # If no token or invalid header, return None
     return None
+
+
+# Resend the OTP to the user 
+class ResendOtpView(APIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = ResendOtpRequestSerializer  # Use the serializer for the POST request
+
+    @extend_schema(**RESEND_OTP_SCHEMA)  # Extend the schema for the API documentation
+    def post(self, request, *args, **kwargs):
+        # Validate request body using the ResendOtpRequestSerializer
+        serializer = self.serializer_class(data=request.data)  # Use the serializer class directly
+        if serializer.is_valid():
+            user_id = serializer.validated_data["user_id"]
+
+            try:
+                # Check if the user exists
+                user = User.objects.get(id=user_id)
+
+                # Check if 2FA is enabled for the user
+                user_prefs = UserPrefs.objects.filter(fk_user_id=user).first()
+                if not user_prefs or not user_prefs.enable_2fa:
+                    return api_response(
+                        status.HTTP_400_BAD_REQUEST,
+                        message="User does not have 2FA enabled."
+                    )
+
+                # Generate OTP (same logic as used in LoginView)
+                otp_obj = OTP.objects.create(user=user)
+                otp_obj.generate_otp()
+
+                return api_response(
+                    status.HTTP_200_OK,
+                    message="OTP has been resent successfully.",
+                    data={"otp": otp_obj.otp}  # Optionally exclude OTP in production
+                )
+
+            except User.DoesNotExist:
+                return api_response(
+                    status.HTTP_404_NOT_FOUND,
+                    message="User not found."
+                )
+        else:
+            return api_response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
