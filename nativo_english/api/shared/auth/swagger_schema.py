@@ -3,7 +3,7 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiResponse
 from drf_spectacular.types import OpenApiTypes
 from nativo_english.api.shared.swagger_sample_responses import SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE, SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE_FOR_COURSE
 from nativo_english.api.shared import messages
-
+from nativo_english.api.shared.auth.views import ResendOtpRequestSerializer
 # --------------------------------------------
 # 2FA - PATCH Schema
 # --------------------------------------------
@@ -82,4 +82,36 @@ VERIFY_OTP_SCHEMA = {
         400: SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE['400'],
         401: SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE['401'],
     },
+}
+
+#---------------------------------------
+# Resent OTP to user
+#---------------------------------------
+RESEND_OTP_SCHEMA = {
+    "summary": "Resend OTP",  # Summary of the operation
+    "description": "This API endpoint resends the OTP for two-factor authentication.",
+    "responses": {
+        "200": {
+            "description": "OTP has been resent successfully.",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "otp": {
+                                "type": "string",
+                                "example": "123456"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "400": {
+            "description": "Bad request, e.g., user not found or 2FA not enabled.",
+        },
+        "404": {
+            "description": "User not found."
+        }
+    }
 }
