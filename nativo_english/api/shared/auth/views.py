@@ -48,6 +48,10 @@ class LoginView(TokenObtainPairView):
         # Check if 2FA is enabled for the user
         user_prefs = UserPrefs.objects.filter(fk_user_id=user).first()
         if user_prefs and user_prefs.enable_2fa:
+            # Check for previous unused OTPs and mark them as used
+            previous_otps = OTP.objects.filter(user=user, is_used=False)
+            previous_otps.update(is_used=True)
+            
             # Generate OTP
             otp_obj = OTP.objects.create(user=user)
             otp_obj.generate_otp()
