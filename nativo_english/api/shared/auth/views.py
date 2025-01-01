@@ -55,7 +55,8 @@ class LoginView(TokenObtainPairView):
             # Create a temporary token
             temp_token = RefreshToken.for_user(user).access_token
             temp_token["temp"] = True
-            temp_token['user_id'] = user.id
+            temp_token["user_id"] = user.id
+            temp_token["role"] = getattr(user, 'role', None)  # Add role to the temporary token
             temp_token.set_exp(lifetime=timedelta(minutes=5))
 
             return api_response(
@@ -64,13 +65,23 @@ class LoginView(TokenObtainPairView):
                 data={
                     "temp_token": str(temp_token),
                     "is_2fa_enabled": True,
+                    "user_id": user.id,
+                    "role": getattr(user, 'role', None),  # Include role in the response
                 },
             )
 
         # Generate JWT tokens if 2FA is not enabled
         tokens = generate_jwt_tokens(user)
         tokens["is_2fa_enabled"] = False
-        return api_response(status.HTTP_200_OK, "Login Successful", data=tokens)
+        tokens["user_id"] = user.id
+        tokens["role"] = getattr(user, 'role', None)  # Add role to the JWT tokens
+
+        return api_response(
+            status.HTTP_200_OK,
+            "Login Successful",
+            data=tokens
+        )
+
 
 
 # TWO FA VIEW
@@ -122,7 +133,7 @@ class VerifyOtpView(APIView):
                 "Invalid OTP."
             )
 
-        # You can also check if OTP is expired or already used
+        # Check if OTP is valid
         if not otp_obj.is_valid():
             return api_response(
                 status.HTTP_400_BAD_REQUEST,
@@ -136,8 +147,11 @@ class VerifyOtpView(APIView):
         otp_obj.mark_as_used()
 
         # Generate JWT tokens upon successful OTP verification
-        user = otp_obj.user
         tokens = generate_jwt_tokens(user)
+
+        # Include user_id and role in the response
+        tokens["user_id"] = user.id
+        tokens["role"] = getattr(user, 'role', None)  # Safely get the role attribute
 
         return api_response(
             status.HTTP_200_OK,
@@ -155,6 +169,7 @@ def is_token_present_in_header(request):
 
     # If no token or invalid header, return None
     return None
+
 
 
 # Resend the OTP to the user 
