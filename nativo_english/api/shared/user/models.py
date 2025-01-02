@@ -1,5 +1,5 @@
 from django.contrib.auth.models import AbstractUser
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 import pyotp
 from django.contrib.auth import get_user_model
@@ -20,6 +20,9 @@ class User(AbstractUser):
     
     role = models.CharField(max_length=100, choices=ROLE_CHOICES, blank=True, null=True)
 
+    # Override the email field to make it mandatory
+    email = models.EmailField(unique=True, blank=False, null=False)
+    
 class UserPrefs(models.Model):
     fk_user_id = models.OneToOneField(User, on_delete=models.CASCADE, related_name="prefs", db_column='fk_user_id')
     enable_2fa = models.BooleanField(default=False)
@@ -60,9 +63,13 @@ class OTP(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     otp = models.CharField(max_length=6)  # OTP generated
     created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
     is_used = models.BooleanField(default=False)  # Track if OTP is used
 
+    def __str__(self):
+        return f"OTP for {self.user.email} - {self.otp} (Expires at: {self.expires_at})"
+    
+    @transaction.atomic
     def generate_otp(self):
          # Check if otp_secret_key is None, and generate one if necessary
         if not self.user.prefs.otp_secret_key:
@@ -73,7 +80,10 @@ class OTP(models.Model):
         otp = totp.now()
         self.otp = otp
         self.expires_at = timezone.now() + timedelta(minutes=5)  # Set expires_at to 5 minutes from now
-        self.save()
+        self.save()  # Save without force_update=True
+
+        # Reload the instance to refresh the in-memory state with the saved OTP
+        self.refresh_from_db()
 
     def is_valid(self):
         # Check if OTP is expired or already used

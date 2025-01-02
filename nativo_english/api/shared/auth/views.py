@@ -53,7 +53,7 @@ class LoginView(TokenObtainPairView):
             previous_otps.update(is_used=True)
             
             # Generate OTP
-            otp_obj = OTP.objects.create(user=user)
+            otp_obj = OTP(user=user)
             otp_obj.generate_otp()
 
             # Create a temporary token

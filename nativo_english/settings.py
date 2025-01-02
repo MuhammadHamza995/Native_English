@@ -34,6 +34,30 @@ DEBUG = env('DEBUG')
 SECRET_KEY = env('SECRET_KEY')
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
+# Email Settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env('EMAIL_HOST')
+EMAIL_PORT = env('EMAIL_PORT')
+EMAIL_USE_TLS = env('EMAIL_USE_TLS')
+INFO_EMAIL_HOST_USER = env('INFO_EMAIL_HOST_USER')
+INFO_EMAIL_HOST_PASSWORD = env('INFO_EMAIL_HOST_PASSWORD')
+NOTIFY_EMAIL_HOST_USER = env('NOTIFY_EMAIL_HOST_USER')
+NOTIFY_EMAIL_HOST_PASSWORD = env('NOTIFY_EMAIL_HOST_PASSWORD')
+
+TIME_ZONE = 'UTC'  # Or your desired timezone
+USE_TZ = True
+
+# Redis as the broker
+CELERY_BROKER_URL = env('CELERY_BROKER_URL')
+
+# Optional: Set result backend (if you need to store task results)
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
+
+# Optional: Configure timezone
+CELERY_TIMEZONE = 'UTC'
+CELERY_ENABLE_UTC = True
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
 
 # Application definition
 INSTALLED_APPS = [
@@ -60,6 +84,7 @@ INSTALLED_APPS = [
     'nativo_english.api.shared.auth',
     'nativo_english.api.shared.user',
     'nativo_english.api.shared.course',
+    'nativo_english.api.shared.notifications',
 
     'nativo_english.db_scripts_automate',
 ]

@@ -2,6 +2,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import exception_handler
 from django.http import Http404
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import AuthenticationFailed, NotAuthenticated, PermissionDenied, ValidationError, NotFound
 
 # Creating API Response Handler
@@ -25,6 +26,10 @@ def api_exception_handler(exc, context):
     if isinstance(exc, Http404):
         exc = NotFound(detail=str(exc))
 
+    # Handle DoesNotExist exceptions
+    if isinstance(exc, ObjectDoesNotExist):
+        exc = exception_handler(exc, context)
+        
     response = exception_handler(exc, context)
     
     if response is not None:

@@ -18,6 +18,8 @@ COPY requirements.txt /app/
 # Step 6: Install dependencies from requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN pip install redis celery
+
 # Step 7: Install uWSGI
 RUN pip install uwsgi
 
