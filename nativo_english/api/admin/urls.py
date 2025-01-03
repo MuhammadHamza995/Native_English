@@ -4,7 +4,7 @@ from .views import (
     AdminCourseListCreateView, AdminCourseRetrieveUpdateView, 
     AdminCourseSectionListCreateView, AdminCourseSectionRetrieveUpdateView, 
     AdminCourseLessonListCreateView, AdminCourseLessonRetrieveUpdateView,
-    AdminCourseLessonContentListCreateView)
+    AdminCourseLessonContentListCreateView,AdminUserInviteView,AdminUserVerifyView)
 
 urlpatterns = [
     path('users/', AdminUserListCreateView.as_view(), name='user-create-list'),
@@ -24,4 +24,8 @@ urlpatterns = [
     path('course/section/<int:course_section_id>/lesson/<int:course_lesson_id>/', AdminCourseLessonRetrieveUpdateView.as_view(), name='course-lesson-detail'),
 
     path('course/section/lesson/<int:lesson_id>/content/', AdminCourseLessonContentListCreateView.as_view(), name='course-section-lesson-content-create-list'),
+
+    path("admin/invite-user-link/", AdminUserInviteView.as_view(), name="invite-user-link"),
+    path("admin/verify-user-link/", AdminUserVerifyView.as_view(), name="verify-user-link"), 
 ]
+

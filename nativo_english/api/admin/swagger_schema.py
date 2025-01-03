@@ -1,8 +1,9 @@
 # Define OpenAPI schema components for better readability
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse,  extend_schema
 from drf_spectacular.types import OpenApiTypes
 from nativo_english.api.shared.swagger_sample_responses import SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE, SWAGGER_ERROR_SAMPLE_RESPONSES_ADMIN_ROLE_FOR_COURSE
 from nativo_english.api.shared import messages
+
 
 # --------------------------------------------
 # Users Swagger Schema Admin
@@ -648,4 +649,69 @@ GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA = {
     'summary': 'Get All Lesson content (Admin access only)',
     'operation_id': 'get_lesson_content_list',
     'description': 'Lists all lesson content'
+}
+
+
+
+
+# Define schema for Invite User API
+INVITE_USER_SCHEMA = {
+    "tags": ["Admin"],
+    "operation_id": "invite_user",
+    "summary": "Invite a new user to complete registration via email",
+    "description": "This API sends an invitation email to the user with a unique link to complete their registration.",
+    "request": {
+        "type": "object",
+        "properties": {
+            "email": {"type": "string", "example": "user@example.com"},
+            "phone": {"type": "string", "example": "+1234567890"},
+        },
+        "required": ["email"],  # Email is required
+    },
+    "responses": {
+        200: OpenApiResponse(
+            description="Invitation sent successfully",
+            examples=[{
+                "invite_link": "https://example.com/complete-registration?uid=123&token=abcd1234",
+                "message": "Invite sent successfully!"
+            }],
+        ),
+        400: OpenApiResponse(
+            description="Bad Request",
+            examples=[{
+                "error": "Email is required"
+            }],
+        ),
+    }
+}
+
+# Define the schema for the verify user API
+VERIFY_USER_SCHEMA = {
+    "tags": ["Admin"],
+    "operation_id": "verify_user",
+    "summary": "Verify and activate a user by their unique token",
+    "description": "This API verifies a user and activates their account based on the provided UID and token.",
+    "request": {
+        "type": "object",
+        "properties": {
+            "uidb64": {"type": "string", "example": "cGFyYWdlNzg5"},
+            "token": {"type": "string", "example": "sometoken123456"},
+            "password": {"type": "string", "example": "newpassword123"},
+        },
+        "required": ["uidb64", "token", "password"],  # All fields are required
+    },
+    "responses": {
+        200: OpenApiResponse(
+            description="User verified and activated successfully",
+            examples=[{
+                "message": "User verified and activated successfully!"
+            }],
+        ),
+        400: OpenApiResponse(
+            description="Bad Request",
+            examples=[{
+                "error": "Invalid or expired token"
+            }],
+        ),
+    }
 }

@@ -63,6 +63,10 @@ INSTALLED_APPS = [
 
     'nativo_english.db_scripts_automate',
 ]
+
+# Add FE URL
+FE_URL = "https://nativoenglish.com/"
+
 LANGUAGES = [
     ('en', 'English'),
     ('fr', 'French'),

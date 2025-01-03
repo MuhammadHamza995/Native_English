@@ -7,6 +7,10 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
+from django.utils.http import urlsafe_base64_encode,  urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
+from rest_framework.parsers import JSONParser
+from django.core.mail import send_mail
 from .serializer import AdminUserSerializer
 from nativo_english.api.shared.course.serializer import CourseSerializer, CourseSectionSerializer, CourseLessonSerializer
 from nativo_english.api.shared.user.models import User
@@ -29,7 +33,7 @@ from .swagger_schema import (
     GET_ADMIN_ALL_COURSE_LESSON_RETRIEVE_SCHEMA, POST_ADMIN_COURSE_LESSON_CREATE_SCHEMA, 
     GET_ADMIN_COURSE_ALL_SECTION_SCHEMA, POST_ADMIN_COURSE_SECTION_CREATE_SCHEMA, 
     GET_ADMIN_COURSE_SECTION_DETAIL_BY_ID_SCHEMA, UPDATE_ADMIN_COURSE_SECTION_BY_ID_SCHEMA,
-    GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA)
+    GET_ADMIN_COURSE_ALL_LESSON_CONTENT_SCHEMA,INVITE_USER_SCHEMA,VERIFY_USER_SCHEMA)
 
 # -----------------------------------------
 class AdminUserPagination(PageNumberPagination):
@@ -485,4 +489,69 @@ class AdminCourseLessonContentListCreateView(APIView):
         
         return
     
+#------------------------------------------class AdminUserInviteView(APIView):
 
+class AdminUserInviteView(APIView):
+    """
+    Handles the user invitation via email with a unique invite link.
+    """
+
+    @extend_schema(**INVITE_USER_SCHEMA)  # Attach the schema for the invite API
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        phone = request.data.get('phone', '')  # Optional
+
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create a new inactive user
+        user = User.objects.create(username=email, email=email, is_active=False)
+
+        # Generate UID and token
+        uid = urlsafe_base64_encode(user.pk.encode())
+        token = default_token_generator.make_token(user)
+
+        # Generate invite link
+        invite_link = f"{settings.FE_URL}complete-registration?uid={uid}&token={token}"
+
+        # Send invite via email
+        subject = "Invitation to Complete Registration"
+        message = f"Click the link to complete your registration: {invite_link}"
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email])
+
+        return Response({
+            "invite_link": invite_link, 
+            "message": "Invite sent successfully!"
+        }, status=status.HTTP_200_OK)
+
+class AdminUserVerifyView(APIView):
+    """
+    Handles user verification and activation using a unique token.
+    """
+    
+    @extend_schema(**VERIFY_USER_SCHEMA)  # Attach the schema for the verify API
+    def put(self, request, *args, **kwargs):
+        uidb64 = request.data.get('uidb64')
+        token = request.data.get('token')
+        password = request.data.get('password')
+
+        if not uidb64 or not token or not password:
+            return Response({"error": "All fields (uidb64, token, password) are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Decode uid and get user
+        uid = urlsafe_base64_decode(uidb64).decode()
+        try:
+            user = User.objects.get(pk=uid)
+        except User.DoesNotExist:
+            return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if the token is valid
+        if not default_token_generator.check_token(user, token):
+            return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Set the password and activate the user
+        user.set_password(password)
+        user.is_active = True
+        user.save()
+
+        return Response({"message": "User verified and activated successfully!"}, status=status.HTTP_200_OK)
