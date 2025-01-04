@@ -36,7 +36,7 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
-# LoginView for Login API
+# LoginView for Login APIclass LoginView(TokenObtainPairView):
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
 
@@ -51,8 +51,8 @@ class LoginView(TokenObtainPairView):
             # Mark previous OTPs as used
             OTP.objects.filter(user=user, is_used=False).update(is_used=True)
 
-            # Generate a new OTP
-            otp_obj = OTP.objects.create(user=user)
+            # Generate a new OTP (Manager's updated lines)
+            otp_obj = OTP(user=user)
             otp_obj.generate_otp()
 
             # Create a temporary token
@@ -78,6 +78,7 @@ class LoginView(TokenObtainPairView):
         tokens["role"] = user.role
 
         return api_response(status.HTTP_200_OK, "Login Successful", data=tokens)
+
 
 
 
