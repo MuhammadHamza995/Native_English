@@ -48,10 +48,10 @@ class LoginView(TokenObtainPairView):
         # Check if 2FA is enabled for the user
         user_prefs = UserPrefs.objects.filter(fk_user_id=user).first()
         if user_prefs and user_prefs.enable_2fa:
-            # Mark previous OTPs as used
+            
             OTP.objects.filter(user=user, is_used=False).update(is_used=True)
 
-            # Generate a new OTP (Manager's updated lines)
+           
             otp_obj = OTP(user=user)
             otp_obj.generate_otp()
 
@@ -173,47 +173,50 @@ class ResendOtpView(APIView):
 
     @extend_schema(**RESEND_OTP_SCHEMA)  # Extend the schema for the API documentation
     def post(self, request, *args, **kwargs):
-        # Validate request body using the ResendOtpRequestSerializer
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            user_id = serializer.validated_data["user_id"]
+    # Validate request body using the ResendOtpRequestSerializer
+     serializer = self.serializer_class(data=request.data)
+     if serializer.is_valid():
+        user_id = serializer.validated_data["user_id"]
 
-            # Check if the user exists
-            user = User.objects.filter(id=user_id).first()
-            if not user:
-                return api_response(
-                    status.HTTP_404_NOT_FOUND,
-                    message="User not found."
-                )
-
-            # Check if 2FA is enabled for the user
-            user_prefs = UserPrefs.objects.filter(fk_user_id=user).first()
-            if not user_prefs or not user_prefs.enable_2fa:
-                return api_response(
-                    status.HTTP_400_BAD_REQUEST,
-                    message="User does not have 2FA enabled."
-                )
-
-            # Mark previous OTPs as used
-            previous_otps = OTP.objects.filter(user=user, is_used=False)
-            previous_otps.update(is_used=True)
-
-            # Generate OTP
-            otp_obj = OTP.objects.create(user=user)
-            otp_obj.generate_otp()
-
-            # Include role in response
-            role = user.role  # Directly access the role field
-
+        # Check if the user exists
+        user = User.objects.filter(id=user_id).first()
+        if not user:
             return api_response(
-                status.HTTP_200_OK,
-                message="OTP has been resent successfully.",
-                data={
-                    "otp": otp_obj.otp,  # Optionally exclude OTP in production
-                    "user_id": user.id,
-                    "role": role
-                }
+                status.HTTP_404_NOT_FOUND,
+                message="User not found."
             )
 
-        return api_response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Check if 2FA is enabled for the user
+        user_prefs = UserPrefs.objects.filter(fk_user_id=user).first()
+        if not user_prefs or not user_prefs.enable_2fa:
+            return api_response(
+                status.HTTP_400_BAD_REQUEST,
+                message="User does not have 2FA enabled."
+            )
+
+        # Mark previous OTPs as used
+        previous_otps = OTP.objects.filter(user=user, is_used=False)
+        previous_otps.update(is_used=True)
+
+        # Generate OTP
+        otp_obj = OTP.objects.create(user=user)
+        otp_obj.generate_otp()
+
+        # Include role in response
+        role = user.role  # Directly access the role field
+
+        return api_response(
+            status.HTTP_200_OK,
+            message="OTP has been resent successfully.",
+            data={
+                "user_id": user.id,
+                "role": role
+            }
+        )
+
+     return api_response(
+        status.HTTP_400_BAD_REQUEST, message=serializer.errors
+       
+    )
+
 
