@@ -9,9 +9,11 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from datetime import timedelta
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
-from .swagger_schema import (FA2_UPDATE_SCHEMA, VERIFY_OTP_SCHEMA,RESEND_OTP_SCHEMA)
-from rest_framework_simplejwt.exceptions import TokenError
-
+from django.contrib.auth.tokens import default_token_generator, PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from django.core.mail import send_mail
+from .swagger_schema import (FA2_UPDATE_SCHEMA, VERIFY_OTP_SCHEMA,RESEND_OTP_SCHEMA,FORGOT_PASSWORD_SCHEMA,UPDATE_PASSWORD_SCHEMA)
 
 def generate_jwt_tokens(user):
     """

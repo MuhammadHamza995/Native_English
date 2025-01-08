@@ -56,3 +56,10 @@ class ResendOtpRequestSerializer(serializers.Serializer):
 # Serializer for logout
 class LogoutSerializer(serializers.Serializer):
     refresh_token = serializers.CharField()
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+class UpdatePasswordSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    password = serializers.CharField(min_length=8)
