@@ -46,3 +46,13 @@ class VerifyOTPSerializer(serializers.ModelSerializer):
     class Meta:
         model = OTP
         fields = ['otp']
+
+
+
+# Serializer for the Resend OTP request, only requiring user_id
+class ResendOtpRequestSerializer(serializers.Serializer):
+    temp_token = serializers.CharField()
+
+# Serializer for logout
+class LogoutSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField()
