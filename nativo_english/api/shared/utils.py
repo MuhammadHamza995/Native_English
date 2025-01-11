@@ -5,6 +5,8 @@ from django.http import Http404
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import AuthenticationFailed, NotAuthenticated, PermissionDenied, ValidationError, NotFound
 
+from rest_framework_simplejwt.exceptions import TokenError
+
 # Creating API Response Handler
 def api_response(status_code, message, data=None):
     response_data = {
@@ -29,7 +31,17 @@ def api_exception_handler(exc, context):
     # Handle DoesNotExist exceptions
     if isinstance(exc, ObjectDoesNotExist):
         exc = exception_handler(exc, context)
-        
+
+     # Handle TokenError explicitly
+    if isinstance(exc, TokenError):
+        # Customize the error message for TokenError
+        custom_message = 'Token is blacklisted or invalid'
+        return Response({
+            'status': 'error',
+            'status_code': status.HTTP_400_BAD_REQUEST,
+            'message': custom_message
+        }, status=status.HTTP_400_BAD_REQUEST)
+
     response = exception_handler(exc, context)
     
     if response is not None:
@@ -56,6 +68,8 @@ def api_exception_handler(exc, context):
             elif isinstance(exc, NotFound):
                 response.data['status_code'] = status.HTTP_404_NOT_FOUND
                 # response.data['message'] = custom_message[0]
+            elif isinstance(exc, TokenError):
+                response.data['status_code'] = status.HTTP_400_BAD_REQUEST
             else:
                 response.data['status_code'] = status.HTTP_500_INTERNAL_SERVER_ERROR
             

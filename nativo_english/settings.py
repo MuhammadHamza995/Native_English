@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
 
     'parler',
@@ -155,9 +156,14 @@ SPECTACULAR_SETTINGS = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'AUTH_HEADER_TYPES': ('Bearer',), 
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+
     'ALGORITHM': 'HS256',  # Use HMAC SHA-256 algorithm
-    'SIGNING_KEY': os.getenv('JWT_SECRET_KEY', 'your-secret-key'), 
+    'SIGNING_KEY': os.getenv('JWT_SECRET_KEY', 'your-secret-key'),
 }
 
 MIDDLEWARE = [

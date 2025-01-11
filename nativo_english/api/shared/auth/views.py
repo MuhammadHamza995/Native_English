@@ -1,15 +1,17 @@
 from django.shortcuts import render
 from rest_framework import generics, permissions, status
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import RegisterSerializer, LoginSerializer, TwoFactorSerializer, VerifyOTPSerializer, ResendOtpRequestSerializer
+from .serializers import RegisterSerializer, LoginSerializer, TwoFactorSerializer, VerifyOTPSerializer, ResendOtpRequestSerializer, LogoutSerializer
 from nativo_english.api.shared.utils import api_response
 from rest_framework.views import APIView
 from nativo_english.api.shared.user.models import UserPrefs, OTP, User
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from datetime import timedelta
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
 from .swagger_schema import (FA2_UPDATE_SCHEMA, VERIFY_OTP_SCHEMA,RESEND_OTP_SCHEMA)
+from rest_framework_simplejwt.exceptions import TokenError
+
 
 def generate_jwt_tokens(user):
     """
@@ -68,6 +70,8 @@ class LoginView(TokenObtainPairView):
                 data={
                     "temp_token": str(temp_token),
                     "is_2fa_enabled": True,
+                    "user_id": user.id,
+                    "role": user.role
                 },
             )
 
@@ -91,10 +95,12 @@ class TwoFactorView(APIView):
     def patch(self, request, *args, **kwargs):
         # Retrieve the user's preferences
         user_pref, created = UserPrefs.objects.get_or_create(
-            fk_user_id=request.user,
-            enable_2fa = request.data['enable_2fa']
+            fk_user_id=request.user
         )
-        
+
+        user_pref.enable_2fa = request.data['enable_2fa']
+        user_pref.save()
+
         # Use the serializer to validate and update the user's preferences
         serializer = self.serializer_class(user_pref, data=request.data, partial=True)
 
@@ -176,7 +182,18 @@ class ResendOtpView(APIView):
     # Validate request body using the ResendOtpRequestSerializer
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            user_id = serializer.validated_data["user_id"]
+            temp_token = serializer.validated_data["temp_token"]
+
+            # Validate the token
+            from rest_framework_simplejwt.authentication import JWTAuthentication
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Bearer "):
+                return api_response(status.HTTP_400_BAD_REQUEST, message="No bearer token passed in Authorization header")
+
+            temp_token_value = auth_header.split(" ")[1]
+            jwt_auth = JWTAuthentication()
+            validated_token = jwt_auth.get_validated_token(temp_token_value)
+            user_id = validated_token.get("user_id")
 
             # Check if the user exists
             user = User.objects.filter(id=user_id).first()
@@ -199,7 +216,9 @@ class ResendOtpView(APIView):
             previous_otps.update(is_used=True)
 
             # Generate OTP
-            otp_obj = OTP.objects.create(user=user)
+            # otp_obj = OTP.objects.create(user=user)
+            # otp_obj.generate_otp()
+            otp_obj = OTP(user=user)
             otp_obj.generate_otp()
 
             # Include role in response
@@ -209,6 +228,7 @@ class ResendOtpView(APIView):
                 status.HTTP_200_OK,
                 message="OTP has been resent successfully.",
                 data={
+                    "temp_token": str(temp_token),
                     "user_id": user.id,
                     "role": role
                 }
@@ -220,3 +240,22 @@ class ResendOtpView(APIView):
         )
 
 
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = LogoutSerializer  # Use the serializer for the POST request
+
+    def post(self, request, *args, **kwargs):
+        # try:
+        refresh_token = request.data.get("refresh_token")
+        if not refresh_token:
+            return api_response(status.HTTP_400_BAD_REQUEST, message="Refresh token is required")
+            
+        # Blacklist the refresh token
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+
+        return api_response(status.HTTP_200_OK, message="Logout successful")
+        # except TokenError as e:
+        #     # Don't suppress it here, let it propagate
+        #     raise e
+    

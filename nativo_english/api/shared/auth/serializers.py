@@ -51,4 +51,8 @@ class VerifyOTPSerializer(serializers.ModelSerializer):
 
 # Serializer for the Resend OTP request, only requiring user_id
 class ResendOtpRequestSerializer(serializers.Serializer):
-    user_id = serializers.IntegerField()
+    temp_token = serializers.CharField()
+
+# Serializer for logout
+class LogoutSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField()
