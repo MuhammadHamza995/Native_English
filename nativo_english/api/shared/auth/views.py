@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import generics, permissions, status
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import RegisterSerializer, LoginSerializer, TwoFactorSerializer, VerifyOTPSerializer, ResendOtpRequestSerializer, LogoutSerializer
+from .serializers import RegisterSerializer, LoginSerializer, TwoFactorSerializer, VerifyOTPSerializer, ResendOtpRequestSerializer, LogoutSerializer, ForgotPasswordSerializer
 from nativo_english.api.shared.utils import api_response
 from rest_framework.views import APIView
 from nativo_english.api.shared.user.models import UserPrefs, OTP, User
@@ -260,4 +260,49 @@ class LogoutView(APIView):
         # except TokenError as e:
         #     # Don't suppress it here, let it propagate
         #     raise e
+
+class ForgotPasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = ForgotPasswordSerializer
+
+    @extend_schema(**FORGOT_PASSWORD_SCHEMA)
+    def post(self, request):
+        email = request.data.get("email")
+        if not email:
+            return api_response(status.HTTP_400_BAD_REQUEST, message="Email is required")
+
+        if not User.objects.filter(email=email).exists():
+            return api_response(status.HTTP_404_NOT_FOUND, message="User not found")
+
+        user = User.objects.get(email=email)  # Safe because of exists() check
+
+        # Create the PasswordResetRequest 
+        PasswordResetRequestTokenGenerator.objects.create(user=user)
+
+        return api_response(status.HTTP_200_OK, message="Password reset link sent to your email")
     
+
+class UpdatePasswordView(APIView):
+    @extend_schema(**UPDATE_PASSWORD_SCHEMA)
+    def post(self, request):
+        uidb64 = request.data.get("uid")
+        token = request.data.get("token")
+        password = request.data.get("password")
+
+        if not uidb64 or not token or not password:
+            return api_response(status.HTTP_400_BAD_REQUEST, message="All fields are required")
+
+        # Decode the user ID
+        uid = urlsafe_base64_decode(uidb64).decode()
+        if not User.objects.filter(pk=uid).exists():
+            return api_response(status.HTTP_400_BAD_REQUEST, message="Invalid user ID")
+
+        user = User.objects.get(pk=uid)  # Safe because of `exists()` check
+        if not default_token_generator.check_token(user, token):
+            return api_response(status.HTTP_400_BAD_REQUEST, message="Invalid or expired token")
+
+        user.set_password(password)
+        user.is_active = True  # Optional: Activate the user if needed
+        user.save()
+
+        return api_response(status.HTTP_200_OK, message="Password updated successfully")

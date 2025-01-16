@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .shared.auth.views import LoginView, TwoFactorView, VerifyOtpView, ForgotPasswordView, UpdatePasswordView, ResendOtpView, LogoutView
+from nativo_english.api.shared.auth.views import LoginView, TwoFactorView, VerifyOtpView, ForgotPasswordView, UpdatePasswordView, ResendOtpView, LogoutView
 
 # Will be adding all api based urlpatterns here
 urlpatterns = [
