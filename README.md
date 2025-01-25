@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 # Educational Platform API
 
@@ -210,3 +211,6 @@ git checkout -b feature/your-feature
 * Follow PEP 8 for Python code style.
 * Document functions and modules.
 * Write unit tests for new features or fixes.
+=======
+# Native_English
+>>>>>>> ccf8f21076c77d3725392943b6c1ea05110602bf
